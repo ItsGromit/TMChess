@@ -1,0 +1,10 @@
+[meta]
+name = "Chess Race"
+author = "ItsGromit"
+category = "Game"
+version = "1.0"
+siteid = ""
+perms = "paid"
+
+[dependencies]
+MLFeedRaceData = ">=4.0.0"
