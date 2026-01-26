@@ -97,7 +97,6 @@ Access settings via Openplanet settings menu:
 
 ### Audio
 - Enable/disable sound effects
-- Toggle between game sounds and custom sounds
 - Adjust volume for each sound type
 
 ### Visual
@@ -107,7 +106,7 @@ Access settings via Openplanet settings menu:
 
 ## Contributing
 
-This project is open-source, but I'm trying to keep it running at all times. DM me on discord, or ping me in one of the various trackmania discord.
+This project is open-source, but I'm trying to keep it running at all times. DM me on discord, or ping me in one of the various trackmania discords.
 My discord is: itsgromit
 
 ## Credits
