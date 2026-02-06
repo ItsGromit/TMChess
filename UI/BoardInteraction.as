@@ -10,7 +10,7 @@
  * @param col The column index (0-7)
  */
 void HandleSquareClick(int row, int col) {
-    // Only handle network game logic (practice mode removed)
+    // Only handle network game logic
     if (GameManager::currentState != GameState::Playing || gameId == "") {
         return;
     }
@@ -66,6 +66,30 @@ void HandleSquareClick(int row, int col) {
             selectedRow = selectedCol = -1;
             return;
         }
+
+        // Check if this is a pawn promotion
+        Piece@ movingPiece = board[gSelR][gSelC];
+        bool isPromotion = false;
+        if (movingPiece !is null && movingPiece.type == PieceType::Pawn) {
+            // White pawn reaching rank 8 (row 0) or Black pawn reaching rank 1 (row 7)
+            if ((movingPiece.color == PieceColor::White && row == 0) ||
+                (movingPiece.color == PieceColor::Black && row == 7)) {
+                isPromotion = true;
+            }
+        }
+
+        if (isPromotion) {
+            // Set up promotion state - don't send move yet, wait for piece selection
+            isPendingPromotion = true;
+            promotionRow = row;
+            promotionCol = col;
+            pendingPromotionFrom = ToAlg(gSelR, gSelC);
+            pendingPromotionTo = ToAlg(row, col);
+            // Keep gSelR, gSelC for now - will be cleared after selection
+            return;
+        }
+
+        // Normal move (not promotion)
         string fromAlg = ToAlg(gSelR, gSelC);
         string toAlg   = ToAlg(row, col);
         SendMove(fromAlg, toAlg);

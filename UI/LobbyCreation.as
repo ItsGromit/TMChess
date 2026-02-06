@@ -294,8 +294,20 @@ void RenderMapFiltersWindow() {
             Json::Value filters = Json::Object();
             filters["authortimemin"] = mapFilterAuthorTimeMin;
             filters["authortimemax"] = mapFilterAuthorTimeMax;
-            filters["tags"] = Json::Array();
-            filters["excludeTags"] = Json::Array();
+
+            // Add required tags (whitelist mode)
+            Json::Value tagsArray = Json::Array();
+            for (uint i = 0; i < mapFilterSelectedTags.Length; i++) {
+                tagsArray.Add(mapFilterSelectedTags[i]);
+            }
+            filters["tags"] = tagsArray;
+
+            // Add excluded tags (blacklist - includes default Kacky/LOL)
+            Json::Value excludeTagsArray = Json::Array();
+            for (uint i = 0; i < mapFilterBlacklistedTags.Length; i++) {
+                excludeTagsArray.Add(mapFilterBlacklistedTags[i]);
+            }
+            filters["excludeTags"] = excludeTagsArray;
 
             SetMapFilters(currentLobbyId, filters);
         }

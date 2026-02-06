@@ -1,5 +1,5 @@
 // ============================================================================
-// SQUARE RACE MODE - RACE EXECUTION
+// Chess Race Mode - Race Execution
 // ============================================================================
 
 namespace RaceMode {
@@ -38,8 +38,7 @@ void FetchSquareRaceMap(int row, int col) {
     SquareMapData@ mapData = MapAssignment::GetSquareMap(row, col);
     if (mapData is null || mapData.tmxId == -1) {
         print("[ChessRace::RaceExecution] Error: No map assigned to square [" + row + ", " + col + "]");
-        // Fallback to random map
-        FetchPracticeModeRaceMap();
+        UI::ShowNotification("Chess", "Error: No map assigned to this square", vec4(1,0.4,0.4,1), 4000);
         return;
     }
 
@@ -70,7 +69,6 @@ void FetchSquareRaceMap(int row, int col) {
  * @param col The column of the selected square
  */
 void ExecuteRaceMode(int row, int col) {
-    // TODO: Implement race execution
     print("[ChessRace::RaceExecution] TODO: ExecuteRaceMode(" + row + ", " + col + ")");
 
     SquareMapData@ mapData = MapAssignment::GetSquareMap(row, col);
@@ -79,7 +77,6 @@ void ExecuteRaceMode(int row, int col) {
         return;
     }
 
-    // TODO: Continue implementation
     selectedSquareRow = row;
     selectedSquareCol = col;
     isRacingSquareMode = true;
@@ -91,7 +88,6 @@ void ExecuteRaceMode(int row, int col) {
  * @param finalTime Player's final race time in milliseconds
  */
 void HandleRaceCompletion(int finalTime) {
-    // TODO: Implement race completion handling
     print("[ChessRace::RaceExecution] TODO: HandleRaceCompletion(" + finalTime + "ms)");
 }
 
@@ -99,7 +95,6 @@ void HandleRaceCompletion(int finalTime) {
  * Handles player giving up / DNF during race
  */
 void HandleRaceDNF() {
-    // TODO: Implement DNF handling
     print("[ChessRace::RaceExecution] TODO: HandleRaceDNF()");
 }
 
@@ -107,10 +102,7 @@ void HandleRaceDNF() {
  * Updates race state each frame (called from main Update loop)
  */
 void UpdateRaceState() {
-    // TODO: Implement race state updates
     if (!isRacingSquareMode) return;
-
-    // TODO: Add frame-by-frame race monitoring logic
 }
 
 } // namespace RaceExecution

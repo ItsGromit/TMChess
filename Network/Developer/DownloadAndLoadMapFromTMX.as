@@ -23,8 +23,7 @@ void DownloadAndLoadMapFromTMX(int tmxId, const string &in mapName = "") {
     }
     auto maniaTitleAPI = app.ManiaTitleControlScriptAPI;
     if (maniaTitleAPI !is null) {
-        // Load map directly from TMX URL without saving to disk
-        // This is what MXRandom and other plugins do
+        // Load map directly from TMX URL
         string mapUrl = "https://trackmania.exchange/maps/download/" + tmxId;
         print("[Chess] Loading map from URL: " + mapUrl);
         maniaTitleAPI.PlayMap(mapUrl, "TrackMania/TM_PlayMap_Local", "");

@@ -61,19 +61,31 @@ void RenderPlayingState() {
     if (isPendingPromotion) {
         PieceType selectedPiece = RenderPromotionDialog();
         if (selectedPiece != PieceType::Empty) {
-            // Store move in history
-            Move@ m = Move(gSelR, gSelC, promotionRow, promotionCol);
-            m.capturePiece = board[promotionRow][promotionCol];
-            moveHistory.InsertLast(m);
+            // Convert piece type to promotion string
+            string promo = "q";
+            if (selectedPiece == PieceType::Rook) promo = "r";
+            else if (selectedPiece == PieceType::Bishop) promo = "b";
+            else if (selectedPiece == PieceType::Knight) promo = "n";
 
-            // Execute the promotion move
-            ExecuteChessMove(gSelR, gSelC, promotionRow, promotionCol, selectedPiece);
-            currentTurn = (currentTurn == PieceColor::White) ? PieceColor::Black : PieceColor::White;
+            // Check if we have pending from/to (either from pre-move or post-race)
+            if (pendingPromotionFrom.Length > 0 && pendingPromotionTo.Length > 0) {
+                // Check if this is a post-race promotion (after winning a race on a promotion capture)
+                // Post-race promotions use SelectPromotion, normal promotions use SendMove
+                if (GameManager::currentState == GameState::Playing && gameId.Length > 0) {
+                    // This is a regular promotion during gameplay - send move with promotion
+                    SendMove(pendingPromotionFrom, pendingPromotionTo, promo);
+                } else {
+                    // Post-race promotion - send to server via SelectPromotion
+                    SelectPromotion(promo);
+                }
+            }
 
             // Clear promotion state
             isPendingPromotion = false;
             promotionRow = -1;
             promotionCol = -1;
+            pendingPromotionFrom = "";
+            pendingPromotionTo = "";
             gSelR = -1;
             gSelC = -1;
             selectedRow = -1;

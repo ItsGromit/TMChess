@@ -55,6 +55,12 @@ void BoardRender() {
 
     vec2 boardPos = UI::GetCursorPos();
 
+    // Store board position info for promotion dialog
+    boardRenderPos = boardPos;
+    boardWindowPos = UI::GetWindowPos();
+    boardSquareSize = squareSize;
+    boardFlipped = flipBoard;
+
     UI::PushStyleVar(UI::StyleVar::FrameRounding, 0.0f);
 
     // Render rank labels (8-1)
@@ -245,7 +251,7 @@ void RenderThumbnailLoadingScreen() {
 
     // Title - centered
     string titleText = Icons::Hourglass + " Loading Thumbnails";
-    vec2 titleSize = Draw::MeasureString(titleText);
+    vec2 titleSize = UI::MeasureString(titleText);
     vec2 currentPos = UI::GetCursorPos();
     UI::SetCursorPos(vec2(currentPos.x + (maxLoadingBoxWidth - titleSize.x) * 0.5f, currentPos.y));
     UI::Text("\\$z" + titleText);
@@ -263,7 +269,7 @@ void RenderThumbnailLoadingScreen() {
 
     // Status text - centered
     string statusText = RaceMode::ThumbnailRendering::GetLoadingText();
-    vec2 statusSize = Draw::MeasureString(statusText);
+    vec2 statusSize = UI::MeasureString(statusText);
     currentPos = UI::GetCursorPos();
     UI::SetCursorPos(vec2(currentPos.x + (maxLoadingBoxWidth - statusSize.x) * 0.5f, currentPos.y));
     UI::Text(statusText);

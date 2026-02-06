@@ -1,6 +1,8 @@
-# Chess Race Classic
+# Chess Race
 
-A multiplayer chess plugin for Trackmania that changes chess strategy to match Trackmania skill!
+A multiplayer chess plugin for Trackmania that mashes chess skills with Trackmania skills!
+
+I did use claude code to HELP with the development of this (I still wrote most of it). Since I'm currently working 2 jobs and doing school full time, I would not have been able to create this without the help of AI. Although I utilized code AI in the initial creation of this plugin, I will not be using it for any future updates since I will not have to test all the bugs on my own with two computers set up next to each other. I will mainly be relying on the community to submit bug reports and give suggestions for future updates.
 
 ## Features
 
@@ -32,7 +34,6 @@ A multiplayer chess plugin for Trackmania that changes chess strategy to match T
 
 ### Visual Features
 
-- **Board Flipping** - Automatically flips the board for black player
 - **Map Thumbnails** - See preview images of maps on each square (Chess Race mode)
 - **Race Results Window** - View race times after returning to the board
 - **Color Customization** - Customize board colors and piece styles
@@ -72,12 +73,6 @@ A multiplayer chess plugin for Trackmania that changes chess strategy to match T
 4. **Finish** - One chance to set fastest time
 5. **Return to Board** - Race results shown, board updates automatically
 
-### Winning
-
-- **Checkmate** - Trap opponent's king (detected automatically)
-- **Stalemate** - No legal moves but not in check (automatic draw)
-- **Resignation** - Click "Forfeit" to resign
-
 ## Game Modes Explained
 
 ### Chess Race Mode
@@ -93,10 +88,11 @@ A multiplayer chess plugin for Trackmania that changes chess strategy to match T
 
 ## Settings
 
-Access settings via Openplanet settings menu:
+Access settings via integrated plugin settings menu (dev settings still in openplanet settings menu):
 
 ### Audio
 - Enable/disable sound effects
+- Toggle between game sounds and custom sounds
 - Adjust volume for each sound type
 
 ### Visual
@@ -106,7 +102,7 @@ Access settings via Openplanet settings menu:
 
 ## Contributing
 
-This project is open-source, but I'm trying to keep it running at all times. DM me on discord, or ping me in one of the various trackmania discords.
+This project is open-source, but I'm trying to keep it running at all times. DM me on discord, or ping me in one of the various trackmania discord.
 My discord is: itsgromit
 
 ## Credits
@@ -116,11 +112,15 @@ My discord is: itsgromit
 
 ## License
 
-The plugin is licensed under the GNU General Public License v3.0. I'm going to keep the server source code private for now.
+The plugin AND the server are both licensed under the GNU General Public License v3.0.
 
 ## Support
 
 For bugs or feature requests, please open an issue on GitHub.
+
+## Known Bugs
+
+The board renderer sometimes glitches out when the main window is a certain ratio size. (I don't know what it is exactly). I think this is something due to how ImGUI works and is not something I can fix easily without rewriting the board renderer.
 
 ---
 

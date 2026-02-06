@@ -1,6 +1,7 @@
 void Main() {
     Init();
     InitializeGlobals();
+    ApplyTheme(currentTheme);
 }
 
 void Update(float dt) {
@@ -10,13 +11,16 @@ void Update(float dt) {
     RaceStateManager::Update();
 }
 
+bool assetsStarted = false;
+
 void RenderMenu() {
     if (UI::MenuItem("Chess Race")) {
         showWindow = !showWindow;
     }
-    if (showWindow) {
-        LoadPieceAssets();
-        LoadLogo();
+    if (showWindow && !assetsStarted) {
+        assetsStarted = true;
+        startnew(LoadPieceAssets);
+        startnew(LoadLogo);
         ChessAudio::LoadSounds();
     }
 }

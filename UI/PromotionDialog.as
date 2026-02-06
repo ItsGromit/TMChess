@@ -1,98 +1,95 @@
 // ============================================================================
 // PAWN PROMOTION DIALOG
 // ============================================================================
-// Handles UI for selecting pawn promotion piece
+// Handles UI for selecting pawn promotion piece with piece images
 // ============================================================================
 
 /**
- * Renders the pawn promotion selection dialog
+ * Renders the pawn promotion selection dialog at the promotion square
  * @return The selected piece type, or PieceType::Empty if no selection yet
  */
 PieceType RenderPromotionDialog() {
     if (!isPendingPromotion) return PieceType::Empty;
 
     // Determine the color of the promoting pawn
-    bool isWhite = (currentTurn == PieceColor::White);
+    PieceColor pieceColor = PieceColor(currentTurn);
 
-    // Create a modal-style overlay
-    vec2 windowSize = UI::GetWindowSize();
-    vec2 dialogSize = vec2(300.0f, 200.0f);
-    vec2 dialogPos = vec2(
-        (windowSize.x - dialogSize.x) * 0.5f,
-        (windowSize.y - dialogSize.y) * 0.5f
-    );
+    // Calculate the position of the promotion square on screen
+    int displayRow = promotionRow;
+    int displayCol = promotionCol;
+    if (boardFlipped) {
+        displayRow = 7 - promotionRow;
+        displayCol = 7 - promotionCol;
+    }
 
-    UI::SetNextWindowSize(int(dialogSize.x), int(dialogSize.y), UI::Cond::Always);
+    // Calculate screen position of the promotion square
+    vec2 squareScreenPos = boardWindowPos + boardRenderPos + vec2(displayCol * boardSquareSize, displayRow * boardSquareSize);
+
+    // Dialog size - 4 pieces in a vertical column
+    float pieceButtonSize = boardSquareSize;
+    float dialogWidth = pieceButtonSize + 8.0f;  // Small padding
+    float dialogHeight = pieceButtonSize * 4 + 12.0f;  // 4 pieces + padding
+
+    // Position dialog next to the promotion square
+    // For white (promoting on row 0), show below the square
+    // For black (promoting on row 7), show above the square
+    vec2 dialogPos;
+    if (promotionRow == 0) {
+        // White promoting - dialog extends downward from the square
+        dialogPos = vec2(squareScreenPos.x - 4.0f, squareScreenPos.y);
+    } else {
+        // Black promoting - dialog extends upward from the square
+        dialogPos = vec2(squareScreenPos.x - 4.0f, squareScreenPos.y - dialogHeight + boardSquareSize);
+    }
+
+    UI::SetNextWindowSize(int(dialogWidth), int(dialogHeight), UI::Cond::Always);
     UI::SetNextWindowPos(int(dialogPos.x), int(dialogPos.y), UI::Cond::Always);
 
     PieceType selectedPiece = PieceType::Empty;
 
-    if (UI::Begin("Pawn Promotion", UI::WindowFlags::NoResize | UI::WindowFlags::NoCollapse | UI::WindowFlags::NoMove)) {
-        UI::Text("\\$f80Choose promotion piece:");
-        UI::NewLine();
+    int windowFlags = UI::WindowFlags::NoResize | UI::WindowFlags::NoCollapse |
+                      UI::WindowFlags::NoMove | UI::WindowFlags::NoTitleBar |
+                      UI::WindowFlags::NoScrollbar;
 
-        // Calculate button size and spacing
-        float buttonSize = 50.0f;
-        float totalWidth = buttonSize * 4 + 30.0f;  // 4 buttons + 3 spacings
-        float offsetX = (dialogSize.x - totalWidth) * 0.5f;
+    UI::PushStyleVar(UI::StyleVar::WindowPadding, vec2(4.0f, 4.0f));
+    UI::PushStyleVar(UI::StyleVar::ItemSpacing, vec2(0.0f, 1.0f));
 
-        UI::SetCursorPos(UI::GetCursorPos() + vec2(offsetX, 0.0f));
+    if (UI::Begin("##PromotionDialog", windowFlags)) {
+        // Array of promotion pieces in order: Queen, Rook, Bishop, Knight
+        array<PieceType> promotionPieces = {
+            PieceType::Queen,
+            PieceType::Rook,
+            PieceType::Bishop,
+            PieceType::Knight
+        };
 
-        // Queen button
-        UI::BeginGroup();
-        UI::PushStyleColor(UI::Col::Button, vec4(0.2f, 0.6f, 0.2f, 1.0f));
-        UI::PushStyleColor(UI::Col::ButtonHovered, vec4(0.3f, 0.7f, 0.3f, 1.0f));
-        UI::PushStyleColor(UI::Col::ButtonActive, vec4(0.1f, 0.5f, 0.1f, 1.0f));
-        if (UI::Button("Q##queen", vec2(buttonSize, buttonSize))) {
-            selectedPiece = PieceType::Queen;
+        for (uint i = 0; i < promotionPieces.Length; i++) {
+            PieceType pieceType = promotionPieces[i];
+            Piece piece = Piece(pieceType, pieceColor);
+            UI::Texture@ tex = GetPieceTexture(piece);
+
+            // Alternate button colors for visibility
+            bool isLight = (i % 2 == 0);
+            vec4 buttonColor = isLight ? boardLightSquareColor : boardDarkSquareColor;
+
+            UI::PushStyleColor(UI::Col::Button, buttonColor);
+            UI::PushStyleColor(UI::Col::ButtonHovered, buttonColor * 1.2f);
+            UI::PushStyleColor(UI::Col::ButtonActive, buttonColor * 0.8f);
+
+            string buttonId = "##promo_" + i;
+            if (UI::Button(buttonId, vec2(pieceButtonSize, pieceButtonSize))) {
+                selectedPiece = pieceType;
+            }
+
+            // Draw the piece image over the button
+            DrawCenteredImageOverLastItem(tex, 4.0f);
+
+            UI::PopStyleColor(3);
         }
-        UI::PopStyleColor(3);
-        UI::Text("Queen");
-        UI::EndGroup();
-
-        UI::SameLine();
-
-        // Rook button
-        UI::BeginGroup();
-        UI::PushStyleColor(UI::Col::Button, vec4(0.2f, 0.4f, 0.6f, 1.0f));
-        UI::PushStyleColor(UI::Col::ButtonHovered, vec4(0.3f, 0.5f, 0.7f, 1.0f));
-        UI::PushStyleColor(UI::Col::ButtonActive, vec4(0.1f, 0.3f, 0.5f, 1.0f));
-        if (UI::Button("R##rook", vec2(buttonSize, buttonSize))) {
-            selectedPiece = PieceType::Rook;
-        }
-        UI::PopStyleColor(3);
-        UI::Text("Rook");
-        UI::EndGroup();
-
-        UI::SameLine();
-
-        // Bishop button
-        UI::BeginGroup();
-        UI::PushStyleColor(UI::Col::Button, vec4(0.6f, 0.4f, 0.2f, 1.0f));
-        UI::PushStyleColor(UI::Col::ButtonHovered, vec4(0.7f, 0.5f, 0.3f, 1.0f));
-        UI::PushStyleColor(UI::Col::ButtonActive, vec4(0.5f, 0.3f, 0.1f, 1.0f));
-        if (UI::Button("B##bishop", vec2(buttonSize, buttonSize))) {
-            selectedPiece = PieceType::Bishop;
-        }
-        UI::PopStyleColor(3);
-        UI::Text("Bishop");
-        UI::EndGroup();
-
-        UI::SameLine();
-
-        // Knight button
-        UI::BeginGroup();
-        UI::PushStyleColor(UI::Col::Button, vec4(0.6f, 0.2f, 0.6f, 1.0f));
-        UI::PushStyleColor(UI::Col::ButtonHovered, vec4(0.7f, 0.3f, 0.7f, 1.0f));
-        UI::PushStyleColor(UI::Col::ButtonActive, vec4(0.5f, 0.1f, 0.5f, 1.0f));
-        if (UI::Button("N##knight", vec2(buttonSize, buttonSize))) {
-            selectedPiece = PieceType::Knight;
-        }
-        UI::PopStyleColor(3);
-        UI::Text("Knight");
-        UI::EndGroup();
     }
     UI::End();
+
+    UI::PopStyleVar(2);
 
     return selectedPiece;
 }

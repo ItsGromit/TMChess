@@ -10,6 +10,6 @@ enum MenuTab {
     Settings
 }
 MenuTab currentMenuTab = MenuTab::Home;
-vec2 screenSize = vec2(Draw::GetWidth(), Draw::GetHeight());
+vec2 screenSize = vec2(Display::GetWidth(), Display::GetHeight());
 float defaultHeight = screenSize.y * 0.6f;
 float defaultWidth = defaultHeight * 1.05f;

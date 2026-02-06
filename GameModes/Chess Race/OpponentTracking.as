@@ -23,9 +23,6 @@ void ResetOpponentData() {
  * @param time The opponent's time at this checkpoint in milliseconds
  */
 void ReceiveOpponentCheckpoint(int checkpointIndex, int time) {
-    // TODO: Implement checkpoint reception
-    print("[ChessRace::OpponentTracking] TODO: ReceiveOpponentCheckpoint(CP" + checkpointIndex + ", " + time + "ms)");
-
     // Ensure array is large enough
     while (opponentData.checkpointTimes.Length <= uint(checkpointIndex)) {
         opponentData.checkpointTimes.InsertLast(-1);

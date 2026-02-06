@@ -184,15 +184,15 @@
                         // Apply server maps directly (can't pass Json::Value to startnew)
                         RaceMode::ApplyServerBoardMapsSync(msg["boardMaps"]);
                     } else if (boardMapsType == Json::Type::Null) {
-                        print("[Chess] boardMaps is null - client will assign maps locally (practice mode)");
+                        print("[Chess] boardMaps is null - client will assign maps locally (fallback)");
                         startnew(RaceMode::InitializeAndAssignMaps);
                     } else {
                         warn("[Chess] boardMaps has unexpected type: " + tostring(boardMapsType));
                         startnew(RaceMode::InitializeAndAssignMaps);
                     }
                 } else {
-                    // Client assigns maps (practice mode)
-                    print("[Chess] No boardMaps field - client will assign maps locally (practice mode)");
+                    // Client assigns maps as fallback
+                    print("[Chess] No boardMaps field - client will assign maps locally (fallback)");
                     startnew(RaceMode::InitializeAndAssignMaps);
                 }
             }
@@ -274,7 +274,6 @@
             defenderTime = -1;
 
             print("[Chess] Race challenge started - Map: " + raceMapName + " (TMX ID: " + raceMapTmxId + "), You are: " + (isDefender ? "Defender" : "Attacker"));
-            GameManager::currentState = GameState::RaceChallenge;
 
             // Reset race state - timer will start when map loads
             raceStartedAt = 0;
@@ -284,45 +283,61 @@
 
             // Reset opponent race state
             opponentIsRacing = false;
-            opponentRaceTime = -1;
+            opponentRaceStartedAt = 0;
+            opponentFinalTime = -1;
+
+            // Reset opponent checkpoint data for the new race
+            RaceMode::OpponentTracking::ResetOpponentData();
 
             // Download and load the race map from TMX
+            GameManager::currentState = GameState::RaceChallenge;
             DownloadAndLoadMapFromTMX(raceMapTmxId, raceMapName);
         } else if (t == "race_defender_finished") {
-            // Defender finished their race
+            // Defender finished their race - we are the attacker
             defenderTime = int(msg["time"]);
+            // Store opponent's (defender's) final time and stop their timer
+            opponentFinalTime = defenderTime;
+            opponentIsRacing = false;
             print("[Chess] Defender finished race in " + defenderTime + "ms");
         } else if (t == "opponent_race_started") {
-            // Opponent started racing
+            // Opponent started racing - record timestamp for local time calculation
             opponentIsRacing = true;
-            opponentRaceTime = 0;
+            opponentRaceStartedAt = Time::Now;
             print("[Chess] Opponent started racing");
-        } else if (t == "opponent_race_time") {
-            // Opponent's live race time update
-            opponentRaceTime = int(msg["time"]);
-            opponentIsRacing = true;
+        } else if (t == "opponent_checkpoint") {
+            // Opponent passed a checkpoint
+            int cpIndex = int(msg["cpIndex"]);
+            int cpTime = int(msg["time"]);
+            RaceMode::OpponentTracking::ReceiveOpponentCheckpoint(cpIndex, cpTime);
+            print("[Chess] Opponent passed CP " + (cpIndex + 1) + ": " + cpTime + "ms");
+        } else if (t == "opponent_finished") {
+            // Opponent (attacker) finished their race - we are the defender
+            int time = int(msg["time"]);
+            // Store opponent's final time and stop their timer
+            opponentFinalTime = time;
+            opponentIsRacing = false;
+            print("[Chess] Opponent (attacker) finished race in " + time + "ms");
         } else if (t == "opponent_retired") {
             // Opponent retired/respawned
             opponentIsRacing = false;
-            opponentRaceTime = -1;
+            opponentRaceStartedAt = 0;
+            opponentFinalTime = -1;
             print("[Chess] Opponent retired/respawned");
-        } else if (t == "race_result") {
-            // Race completed, apply the result
-            bool captureSucceeded = bool(msg["captureSucceeded"]);
-            string fen = string(msg["fen"]);
-            string turn = string(msg["turn"]);
-
-            print("[Chess] Race result - Capture " + (captureSucceeded ? "succeeded" : "failed"));
+        } else if (t == "promotion_required") {
+            // Attacker won race on a promotion capture - need to select promotion piece
+            pendingPromotionFrom = string(msg["from"]);
+            pendingPromotionTo = string(msg["to"]);
+            isPendingPromotion = true;
+            print("[Chess] Promotion required - won race, select promotion piece");
 
             // Save race results to show in results window
             showRaceResults = true;
-            lastRaceCaptureSucceeded = captureSucceeded;
+            lastRaceCaptureSucceeded = true;
             lastRacePlayerTime = playerRaceTime;
-            lastRaceOpponentTime = opponentRaceTime;
-            lastRacePlayerWasDefender = isDefender;
+            lastRaceOpponentTime = GetOpponentRaceTime();
+            lastRacePlayerWasDefender = false; // Attacker always
 
-            // Apply the board state
-            ApplyFEN(fen, turn);
+            // Return to playing state so promotion dialog shows
             GameManager::currentState = GameState::Playing;
 
             // Reset race state
@@ -332,6 +347,43 @@
             defenderTime = -1;
             captureFrom = "";
             captureTo = "";
+            opponentIsRacing = false;
+            opponentRaceStartedAt = 0;
+            opponentFinalTime = -1;
+        } else if (t == "race_result") {
+            // Race completed, apply the result
+            bool captureSucceeded = bool(msg["captureSucceeded"]);
+            string fen = string(msg["fen"]);
+            string turn = string(msg["turn"]);
+            bool waitingForPromotion = msg.HasKey("waitingForPromotion") && bool(msg["waitingForPromotion"]);
+
+            print("[Chess] Race result - Capture " + (captureSucceeded ? "succeeded" : "failed") + (waitingForPromotion ? " (waiting for promotion)" : ""));
+
+            // Save race results to show in results window (unless waiting for promotion on defender side)
+            if (!waitingForPromotion) {
+                showRaceResults = true;
+                lastRaceCaptureSucceeded = captureSucceeded;
+                lastRacePlayerTime = playerRaceTime;
+                lastRaceOpponentTime = GetOpponentRaceTime();
+                lastRacePlayerWasDefender = isDefender;
+            }
+
+            // Apply the board state (if not waiting for promotion)
+            if (!waitingForPromotion) {
+                ApplyFEN(fen, turn);
+            }
+            GameManager::currentState = GameState::Playing;
+
+            // Reset race state
+            raceMapTmxId = -1;
+            raceMapName = "";
+            isDefender = false;
+            defenderTime = -1;
+            captureFrom = "";
+            captureTo = "";
+            opponentIsRacing = false;
+            opponentRaceStartedAt = 0;
+            opponentFinalTime = -1;
         } else if (t == "rematch_request") {
             print("[Chess] Received rematch request from opponent");
             rematchRequestReceived = true;

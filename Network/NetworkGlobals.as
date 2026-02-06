@@ -45,11 +45,25 @@ string captureTo = "";
 int activeMappackId = 7237; // Mappack ID received from server for current game
 
 // Live race tracking
-int opponentRaceTime = -1;          // Opponent's current race time (-1 if not racing)
 bool opponentIsRacing = false;       // Whether opponent is currently racing
-uint64 lastRaceUpdateSent = 0;       // Last time we sent a race update (throttle to avoid spam)
-int lastPlayerStartTime = -1;        // Track player's last start time to detect restarts
-int lastPlayerRaceTime = 0;          // Track last race time to detect if time went backwards (full restart)
+uint64 opponentRaceStartedAt = 0;    // Timestamp when opponent started racing (for local time calculation)
+int opponentFinalTime = -1;          // Opponent's final race time when they finish (-1 if not finished)
+
+/**
+ * Gets the opponent's current race time calculated locally.
+ * Returns the final time if opponent finished, calculates live time if racing, or -1 if not racing.
+ */
+int GetOpponentRaceTime() {
+    // If opponent finished, return their final time
+    if (opponentFinalTime > 0) {
+        return opponentFinalTime;
+    }
+    // If opponent is racing, calculate their live time
+    if (opponentIsRacing && opponentRaceStartedAt > 0) {
+        return int(Time::Now - opponentRaceStartedAt);
+    }
+    return -1;
+}
 
 // Race result tracking (to keep results window open after returning to board)
 bool showRaceResults = false;        // Whether to show race results window

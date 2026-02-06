@@ -48,10 +48,11 @@ void RenderRaceWindow() {
         UI::Text(themeSectionLabelColor + "\\$f80Opponent");
 
         // Show opponent's live time if they're currently racing
-        if (opponentIsRacing && opponentRaceTime >= 0) {
-            // Opponent is currently racing - show live time
-            int oppSeconds = opponentRaceTime / 1000;
-            int oppMilliseconds = opponentRaceTime % 1000;
+        int opponentLiveTime = GetOpponentRaceTime();
+        if (opponentIsRacing && opponentLiveTime >= 0) {
+            // Opponent is currently racing - show live time (calculated locally)
+            int oppSeconds = opponentLiveTime / 1000;
+            int oppMilliseconds = opponentLiveTime % 1000;
             UI::Text(themeSuccessTextColor + "Racing: \\$fff" + oppSeconds + "." + Text::Format("%03d", oppMilliseconds) + "s");
         }
         // Show defender's finished time if available (for attackers)
@@ -85,7 +86,7 @@ void RenderRaceWindow() {
             UI::Text("Time: \\$fff" + seconds + "." + Text::Format("%03d", milliseconds) + "s");
 
             // Show comparison to opponent if they're racing or have finished
-            int compareTime = opponentIsRacing ? opponentRaceTime : defenderTime;
+            int compareTime = opponentIsRacing ? GetOpponentRaceTime() : defenderTime;
             if (compareTime > 0) {
                 int diff = elapsedMs - compareTime;
                 if (diff < 0) {
@@ -103,6 +104,9 @@ void RenderRaceWindow() {
                     UI::Text("\\$fffExactly tied!");
                 }
             }
+
+            // Checkpoint times section
+            RenderCheckpointComparison();
         } else {
             UI::Text(themeSectionLabelColor + "\\$f80Your Race");
             UI::TextDisabled("Not started");
@@ -127,19 +131,8 @@ void RenderRaceWindow() {
 
             UI::NewLine();
 
-            // In practice mode, show continue button to return to chess board
-            if (gameId == "") {
-                if (StyledButton("Continue to Chess Board", vec2(200.0f, 30.0f))) {
-                    // Return to chess board
-                    GameManager::currentState = GameState::Playing;
-                    playerFinishedRace = false;
-                    playerDNF = false;
-                    playerRaceTime = 0;
-                }
-            } else {
-                // In network mode, wait for opponent
-                UI::Text("\\$888Waiting for opponent to finish...");
-            }
+            // Wait for opponent to finish
+            UI::Text("\\$888Waiting for opponent to finish...");
         }
     }
     UI::End();
@@ -206,4 +199,77 @@ void RenderRaceResultsWindow() {
 
     // Pop the title bar style colors
     UI::PopStyleColor(3);
+}
+
+/**
+ * Formats a time in milliseconds to a readable string (e.g. "12.345")
+ */
+string FormatTime(int ms) {
+    int seconds = ms / 1000;
+    int milliseconds = ms % 1000;
+    return seconds + "." + Text::Format("%03d", milliseconds);
+}
+
+/**
+ * Renders checkpoint comparison between player and opponent
+ * Only shows checkpoints that have actually been hit by at least one player
+ */
+void RenderCheckpointComparison() {
+    auto@ playerCPs = RaceStateManager::playerCheckpointTimes;
+    auto@ opponentCPs = RaceMode::OpponentTracking::opponentData.checkpointTimes;
+
+    // Count actual checkpoints hit (with valid times > 0)
+    uint playerActualCPs = 0;
+    for (uint i = 0; i < playerCPs.Length; i++) {
+        if (playerCPs[i] > 0) playerActualCPs = i + 1;
+    }
+
+    uint opponentActualCPs = 0;
+    for (uint i = 0; i < opponentCPs.Length; i++) {
+        if (opponentCPs[i] > 0) opponentActualCPs = i + 1;
+    }
+
+    // Only show if we have actual checkpoint data
+    if (playerActualCPs == 0 && opponentActualCPs == 0) {
+        return;
+    }
+
+    UI::NewLine();
+    UI::Text(themeSectionLabelColor + "\\$f80Checkpoints");
+
+    // Only show checkpoints that have been hit by at least one player
+    uint maxCPs = Math::Max(playerActualCPs, opponentActualCPs);
+
+    for (uint i = 0; i < maxCPs; i++) {
+        int playerTime = (i < playerCPs.Length) ? playerCPs[i] : -1;
+        int opponentTime = (i < opponentCPs.Length) ? opponentCPs[i] : -1;
+
+        // Skip if neither player has hit this checkpoint
+        if (playerTime <= 0 && opponentTime <= 0) {
+            continue;
+        }
+
+        string cpLabel = "CP " + (i + 1) + ": ";
+
+        // Format player time
+        string playerStr = (playerTime > 0) ? FormatTime(playerTime) : "---";
+
+        // Format opponent time
+        string opponentStr = (opponentTime > 0) ? FormatTime(opponentTime) : "---";
+
+        // Calculate delta if both have times
+        string deltaStr = "";
+        if (playerTime > 0 && opponentTime > 0) {
+            int delta = playerTime - opponentTime;
+            if (delta < 0) {
+                deltaStr = themeSuccessTextColor + " (-" + FormatTime(-delta) + ")";
+            } else if (delta > 0) {
+                deltaStr = themeWarningTextColor + " (+" + FormatTime(delta) + ")";
+            } else {
+                deltaStr = " (=)";
+            }
+        }
+
+        UI::Text(cpLabel + "\\$fff" + playerStr + " / " + opponentStr + deltaStr);
+    }
 }

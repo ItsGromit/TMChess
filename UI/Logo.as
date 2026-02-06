@@ -94,14 +94,14 @@ UI::Texture@ LoadLogoTexture(const string &in filename) {
  * Clears the logo from memory and cache
  */
 void ClearLogoCache() {
-    if (developerMode) print("[Logo] Clearing logo cache...");
+    trace("[Logo] Clearing logo cache...");
 
     @logoTexture = null;
 
     string cachePath = IO::FromStorageFolder("textures/TMChess.png");
     if (IO::FileExists(cachePath)) {
         IO::Delete(cachePath);
-        if (developerMode) print("[Logo] Deleted cached logo");
+        trace("[Logo] Deleted cached logo");
     }
 }
 

@@ -13,6 +13,144 @@ SGamePlaygroundUIConfig::EUISequence lastSeq = SGamePlaygroundUIConfig::EUISeque
 int stableRaceTime = -1;
 int stableRaceTimeFrames = 0;
 
+// Give Up detection via MLFeed spawn status
+bool spawnLatch = false;
+bool resetProtection = false;
+string curMap = "";
+bool verboseMode = false;
+uint lastSpawnIndex = 0;
+
+// Checkpoint tracking
+int lastCheckpointCount = 0;
+array<int> playerCheckpointTimes;  // Store player's checkpoint times for display
+
+/**
+ * Resets the give-up detection state when starting a new race
+ */
+void ResetGiveUpDetection() {
+    spawnLatch = false;
+    resetProtection = true;
+    lastSpawnIndex = 0;
+
+    // Get current spawn index to establish baseline
+    auto raceData = MLFeed::GetRaceData_V4();
+    if (raceData !is null) {
+        auto playerData = raceData.GetPlayer_V4(MLFeed::LocalPlayersName);
+        if (playerData !is null) {
+            lastSpawnIndex = playerData.SpawnIndex;
+            if (verboseMode) print("[GiveUp] Reset detection, baseline SpawnIndex: " + lastSpawnIndex);
+        }
+    }
+}
+
+/**
+ * Resets checkpoint tracking for a new race
+ */
+void ResetCheckpointTracking() {
+    lastCheckpointCount = 0;
+    playerCheckpointTimes.RemoveRange(0, playerCheckpointTimes.Length);
+}
+
+/**
+ * Checks for new checkpoints and sends them to the server
+ */
+void CheckCheckpoints() {
+    auto raceData = MLFeed::GetRaceData_V4();
+    if (raceData is null) return;
+
+    auto playerData = raceData.GetPlayer_V4(MLFeed::LocalPlayersName);
+    if (playerData is null) return;
+
+    // Get checkpoint times from MLFeed
+    auto cpTimes = playerData.CpTimes;
+    if (cpTimes is null) return;
+
+    int currentCpCount = cpTimes.Length;
+
+    // Check if we passed a new checkpoint
+    if (currentCpCount > lastCheckpointCount) {
+        // Process each new checkpoint using index-based storage (same as opponent tracking)
+        for (int i = lastCheckpointCount; i < currentCpCount; i++) {
+            int cpTime = cpTimes[i];
+
+            // Ensure array is large enough for this index
+            while (playerCheckpointTimes.Length <= uint(i)) {
+                playerCheckpointTimes.InsertLast(-1);
+            }
+
+            if (cpTime > 0) {
+                // Store locally at the correct index
+                playerCheckpointTimes[i] = cpTime;
+
+                // Send to server
+                Json::Value j = Json::Object();
+                j["type"] = "checkpoint";
+                j["gameId"] = gameId;
+                j["cpIndex"] = i;
+                j["time"] = cpTime;
+                SendJson(j);
+
+                print("[Checkpoint] CP " + (i + 1) + ": " + cpTime + "ms");
+            }
+        }
+        lastCheckpointCount = currentCpCount;
+    }
+}
+
+/**
+ * Check if player gave up using MLFeed spawn status tracking
+ * Returns true if player gave up (DNF was triggered)
+ */
+bool CheckGiveUp() {
+    // Get race data from MLFeed
+    auto raceData = MLFeed::GetRaceData_V4();
+    if (raceData is null) {
+        return false;
+    }
+
+    // Get local player data
+    auto playerData = raceData.GetPlayer_V4(MLFeed::LocalPlayersName);
+    if (playerData is null) {
+        return false;
+    }
+
+    // Check if SpawnIndex has increased (indicates respawn/give up)
+    uint currentSpawnIndex = playerData.SpawnIndex;
+
+    // Reset protection: skip the first check after race starts
+    if (resetProtection) {
+        lastSpawnIndex = currentSpawnIndex;
+        resetProtection = false;
+        if (verboseMode) print("[GiveUp] Protection reset, SpawnIndex: " + currentSpawnIndex);
+        return false;
+    }
+
+    // If spawn index increased, player respawned (gave up)
+    if (currentSpawnIndex > lastSpawnIndex) {
+        print("[GiveUp] Player gave up! SpawnIndex changed from " + lastSpawnIndex + " to " + currentSpawnIndex);
+
+        // Mark as DNF
+        playerDNF = true;
+        playerFinishedRace = true;
+
+        // Send DNF to server
+        Json::Value j = Json::Object();
+        j["type"] = "dnf";
+        j["gameId"] = gameId;
+        SendJson(j);
+        print("[GiveUp] Sent DNF to server");
+
+        // Exit race challenge state and reopen chess window
+        GameManager::currentState = GameState::Playing;
+        raceStartedAt = 0;
+
+        return true;
+    }
+
+    lastSpawnIndex = currentSpawnIndex;
+    return false;
+}
+
 /**
  * Main update function for race state management
  * Call this every frame from the main Update loop
@@ -63,35 +201,20 @@ void Update() {
                             playerFinishedRace = true;
                             playerRaceTime = finalTime;
 
-                            // Send race result to server (if in network game)
-                            if (gameId != "") {
-                                Json::Value j = Json::Object();
-                                j["type"] = "race_result";
-                                j["gameId"] = gameId;
-                                j["time"] = playerRaceTime;
-                                SendJson(j);
-                                print("[RaceDetection] Sent race_result to server: " + playerRaceTime + "ms");
+                            // Send race result to server
+                            Json::Value j = Json::Object();
+                            j["type"] = "race_result";
+                            j["gameId"] = gameId;
+                            j["time"] = playerRaceTime;
+                            SendJson(j);
+                            print("[RaceDetection] Sent race_result to server: " + playerRaceTime + "ms");
 
-                                // Send player back to main menu but keep race window open
-                                auto app2 = cast<CTrackMania>(GetApp());
-                                app2.BackToMainMenu();
-
-                                // In network mode, keep race window open to show result
-                                // Race window will stay up until server sends race_result message with both times
-                            } else {
-                                // In practice mode, send player back to main menu and keep race window open
-                                print("[RaceDetection] Practice mode - showing race result");
-                                auto app2 = cast<CTrackMania>(GetApp());
-                                app2.BackToMainMenu();
-
-                                // Keep race window open showing the player's time
-                                // Player can manually close it or click continue to return to chess board
-                            }
+                            // Send player back to main menu but keep race window open
+                            auto app2 = cast<CTrackMania>(GetApp());
+                            app2.BackToMainMenu();
 
                             // Reset race tracking variables
                             raceStartedAt = 0;
-                            lastPlayerStartTime = -1;
-                            lastPlayerRaceTime = 0;
 
                             return;
                         } else {
@@ -109,63 +232,41 @@ void Update() {
             }
         }
 
+        // Check for give up via MLFeed spawn status (runs independently of IsPlayerReady)
+        if (raceStartedAt > 0) {
+            if (CheckGiveUp()) {
+                return;  // Player gave up, DNF was triggered
+            }
+        }
+
         // SECOND: Check if player is ready to race (for ongoing race tracking)
         if (IsPlayerReady()) {
-            int currentStartTime = GetPlayerStartTime();
-            int currentRaceTime = GetCurrentRaceTime();
-
-            // Detect if player used "Give Up" (full restart)
-            // When player uses "Give Up", their race time resets to ~0
-            // When player respawns to checkpoint, time stays roughly the same or goes forward
-            if (raceStartedAt > 0 && lastPlayerRaceTime > 1000) {  // Only check if they've been racing for more than 1 second
-                // If race time reset to near 0 (less than 200ms), player used "Give Up"
-                if (currentRaceTime < 200) {
-                    print("[RaceDetection] Player used Give Up (race time reset from " + lastPlayerRaceTime + "ms to " + currentRaceTime + "ms) - triggering DNF");
-
-                    // Mark as DNF
-                    playerDNF = true;
-                    playerFinishedRace = true;
-
-                    // Send DNF to server if in network game
-                    if (gameId != "") {
-                        Json::Value j = Json::Object();
-                        j["type"] = "dnf";
-                        j["gameId"] = gameId;
-                        SendJson(j);
-                    }
-
-                    // Force player back to menu and exit race state
-                    auto app2 = cast<CTrackMania>(GetApp());
-                    app2.BackToMainMenu();
-
-                    // Exit race challenge state and reopen chess window
-                    GameManager::currentState = GameState::Playing;
-                    raceStartedAt = 0;
-                    lastPlayerStartTime = -1;
-                    lastPlayerRaceTime = 0;
-                    return;
-                }
-            }
-
-            // Track start time and race time
-            lastPlayerStartTime = currentStartTime;
-            lastPlayerRaceTime = currentRaceTime;
-
             if (raceStartedAt == 0) {
                 // Player is now ready and in the race
                 raceStartedAt = 1;
                 print("[RaceDetection] Player is ready, race started");
 
+                // Reset give-up detection for this new race
+                ResetGiveUpDetection();
+
+                // Reset local checkpoint tracking for this new race
+                ResetCheckpointTracking();
+
+                // Don't reset opponent data here - it was already reset when the
+                // race_challenge message was received, and the opponent may have
+                // started racing and sent checkpoints while we were still loading.
+
                 // Send race_started message to server
-                if (gameId != "") {
-                    Json::Value j = Json::Object();
-                    j["type"] = "race_started";
-                    j["gameId"] = gameId;
-                    SendJson(j);
-                    print("[RaceDetection] Sent race_started to server");
-                }
+                Json::Value j = Json::Object();
+                j["type"] = "race_started";
+                j["gameId"] = gameId;
+                SendJson(j);
+                print("[RaceDetection] Sent race_started to server");
             }
 
+            // Check for new checkpoints
+            CheckCheckpoints();
+            
             // Fallback: Check player's Score for completed race times
             // When a player finishes, their time appears in BestRaceTimes or PrevRaceTimes
             if (playground !is null && playground.GameTerminals.Length > 0) {
@@ -182,35 +283,20 @@ void Update() {
                             playerFinishedRace = true;
                             playerRaceTime = finalTime;
 
-                            // Send race result to server (if in network game)
-                            if (gameId != "") {
-                                Json::Value j = Json::Object();
-                                j["type"] = "race_result";
-                                j["gameId"] = gameId;
-                                j["time"] = playerRaceTime;
-                                SendJson(j);
-                                print("[RaceDetection] Sent race_result to server: " + playerRaceTime + "ms");
+                            // Send race result to server
+                            Json::Value j = Json::Object();
+                            j["type"] = "race_result";
+                            j["gameId"] = gameId;
+                            j["time"] = playerRaceTime;
+                            SendJson(j);
+                            print("[RaceDetection] Sent race_result to server: " + playerRaceTime + "ms");
 
-                                // Send player back to main menu but keep race window open
-                                auto app3 = cast<CTrackMania>(GetApp());
-                                app3.BackToMainMenu();
-
-                                // In network mode, keep race window open to show result
-                                // Race window will stay up until server sends race_result message with both times
-                            } else {
-                                // In practice mode, send player back to main menu and keep race window open
-                                print("[RaceDetection] Practice mode - showing DNF result");
-                                auto app3 = cast<CTrackMania>(GetApp());
-                                app3.BackToMainMenu();
-
-                                // Keep race window open showing DNF
-                                // Player can manually close it or click continue to return to chess board
-                            }
+                            // Send player back to main menu but keep race window open
+                            auto app3 = cast<CTrackMania>(GetApp());
+                            app3.BackToMainMenu();
 
                             // Reset race tracking variables
                             raceStartedAt = 0;
-                            lastPlayerStartTime = -1;
-                            lastPlayerRaceTime = 0;
                             stableRaceTime = -1;
                             stableRaceTimeFrames = 0;
 
@@ -220,19 +306,6 @@ void Update() {
                 }
             }
 
-            // Send periodic race time updates (every 100ms)
-            if (gameId != "") {
-                uint64 now = Time::Now;
-                if (now - lastRaceUpdateSent >= 100) {
-                    int currentTime = GetCurrentRaceTime();
-                    Json::Value j = Json::Object();
-                    j["type"] = "race_time_update";
-                    j["gameId"] = gameId;
-                    j["time"] = currentTime;
-                    SendJson(j);
-                    lastRaceUpdateSent = now;
-                }
-            }
         } else if (raceStartedAt > 0) {
             // Player was racing but is no longer ready (left playground entirely)
             if (!IsInPlayground()) {
@@ -242,19 +315,15 @@ void Update() {
                 playerDNF = true;
                 playerFinishedRace = true;
 
-                // Send DNF to server if in network game
-                if (gameId != "") {
-                    Json::Value j = Json::Object();
-                    j["type"] = "dnf";
-                    j["gameId"] = gameId;
-                    SendJson(j);
-                }
+                // Send DNF to server
+                Json::Value j = Json::Object();
+                j["type"] = "dnf";
+                j["gameId"] = gameId;
+                SendJson(j);
 
                 // Exit race challenge state and reopen chess window
                 GameManager::currentState = GameState::Playing;
                 raceStartedAt = 0;
-                lastPlayerStartTime = -1;
-                lastPlayerRaceTime = 0;
             }
         }
     }

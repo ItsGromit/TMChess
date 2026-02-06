@@ -29,10 +29,18 @@ int enPassantCol = -1;
 bool isPendingPromotion = false;
 int promotionRow = -1;
 int promotionCol = -1;
+string pendingPromotionFrom = "";  // For post-race promotion
+string pendingPromotionTo = "";    // For post-race promotion
 
 // map info tooltip tracking (right-click to show)
 int mapInfoTooltipRow = -1;
 int mapInfoTooltipCol = -1;
+
+// board rendering position info (for promotion dialog positioning)
+vec2 boardRenderPos = vec2(0, 0);       // Top-left corner of board in window coordinates
+vec2 boardWindowPos = vec2(0, 0);       // Window position for screen coordinates
+float boardSquareSize = 40.0f;          // Size of each square
+bool boardFlipped = false;              // Whether board is flipped for black player
 
 // rematch variables
 bool rematchRequestReceived = false;

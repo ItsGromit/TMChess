@@ -50,8 +50,6 @@ void RenderMenuState() {
     }
     UI::PopStyleColor(3);
 
-    UI::NewLine();
-
     // Tab content
     if (currentMenuTab == MenuTab::Home) {
         RenderHomeTab();
@@ -67,8 +65,7 @@ void RenderMenuState() {
  */
 void RenderHomeTab() {
     // Render TMChess logo at the top
-    RenderLogoCentered(400.0f);
-    UI::NewLine();
+    RenderLogoCentered(350.0f);
 
     // Center the welcome text
     string welcomeText = "Welcome to Chess Race! This is where chess clashes with Trackmania";
@@ -87,17 +84,6 @@ void RenderHomeTab() {
     UI::PushTextWrapPos(UI::GetCursorPos().x + maxWidth);
     UI::TextWrapped(welcomeText);
     UI::PopTextWrapPos();
-    UI::NewLine();
-
-    // Practice Mode Section - Only show in developer mode
-    if (developerMode) {
-        UI::Text(themeSectionLabelColor + "Practice Mode (Developer):");
-        UI::NewLine();
-        UI::TextDisabled("Practice mode has been removed.");
-        UI::TextDisabled("Use multiplayer to play Chess Race!");
-        UI::NewLine();
-        UI::NewLine();
-    }
 
     // Rules & How to Play Section - Centered
     vec2 rulesAvailRegion = UI::GetContentRegionAvail();
@@ -116,19 +102,43 @@ void RenderHomeTab() {
     UI::TextWrapped("- Play follows standard chess rules");
     UI::TextWrapped("- Click a piece to select it, then click a valid destination square to move");
     UI::TextWrapped("- Special moves like castling, en passant, and pawn promotion are supported");
-    UI::NewLine();
+    UI::Dummy(vec2(0, 5));
     UI::TextWrapped("Chess Race Mode:");
     UI::TextWrapped("- Each square on the board has a Trackmania map assigned to it");
     UI::TextWrapped("- When attempting a capture, both players race on the destination square's map");
     UI::TextWrapped("- The winner of the race gets the piece, even if defending");
     UI::TextWrapped("- Right-click any square to see its map name and tags");
-    UI::NewLine();
+    UI::Dummy(vec2(0, 5));
     UI::TextWrapped("Classic Mode:");
     UI::TextWrapped("- Maps are selected at random when attempting a capture");
     UI::TextWrapped("- Capture only confirms if attacker beats the defender's time");
 
     UI::PopTextWrapPos();
     UI::EndGroup();
+
+    UI::Dummy(vec2(0, 5));
+
+    UI::SetCursorPos(UI::GetCursorPos() + vec2(rulesOffsetX, 0.0f));
+
+    UI::BeginGroup();
+    UI::PushTextWrapPos(UI::GetCursorPos().x + rulesMaxWidth);
+    UI::TextWrapped("This plugin has taken around 300 hours of programming, testing, and debugging so I appreciate any support given.");
+    UI::TextWrapped(" To donate, use the KoFi link below, and to give suggestions or report bugs, create an issue on the github page.");
+    UI::NewLine();
+    UI::PopTextWrapPos();
+
+    UI::EndGroup();
+
+    // Center "Thanks for playing and supporting!" text
+    string thanksText = "Thanks for playing and supporting!";
+    vec2 thanksSize = UI::MeasureString(thanksText);
+    vec2 thanksAvailRegion = UI::GetContentRegionAvail();
+    float thanksOffsetX = (thanksAvailRegion.x - thanksSize.x) * 0.5f;
+    thanksOffsetX = Math::Max(thanksOffsetX, 0.0f);
+
+    vec2 thanksCursorPos = UI::GetCursorPos();
+    UI::SetCursorPos(vec2(thanksCursorPos.x + thanksOffsetX, thanksCursorPos.y));
+    UI::Text(thanksText);
 
     // Footer Section - Push to bottom and center
     vec2 footerAvailRegion = UI::GetContentRegionAvail();
@@ -149,7 +159,7 @@ void RenderHomeTab() {
 
     // Measure the total width of all links text
     string allLinksText = "Ko-fi/Donate | Source | Openplanet Page";
-    vec2 linksSize = Draw::MeasureString(allLinksText);
+    vec2 linksSize = UI::MeasureString(allLinksText);
     float linksOffsetX = (linksAvailRegion.x - linksSize.x) * 0.5f;
     linksOffsetX = Math::Max(linksOffsetX, 0.0f);
 
@@ -178,11 +188,11 @@ void RenderHomeTab() {
     UI::Text("\\$66fSource");
     if (UI::IsItemHovered()) {
         UI::BeginTooltip();
-        UI::Text("https://github.com/ItsGromit/TrackmaniaChess");
+        UI::Text("https://github.com/ItsGromit/TMChess");
         UI::EndTooltip();
     }
     if (UI::IsItemClicked()) {
-        OpenBrowserURL("https://github.com/ItsGromit/TrackmaniaChess");
+        OpenBrowserURL("https://github.com/ItsGromit/TMChess");
     }
     UI::SameLine();
     UI::Text("|");
@@ -214,11 +224,11 @@ void RenderPlayTab() {
             if (portParsed > 0) serverPort = portParsed;
         }
 
-        print("[Chess] Attempting to connect to server: " + serverHost + ":" + serverPort);
+        trace("[Chess] Attempting to connect to server: " + serverHost + ":" + serverPort);
         if (Connect()) {
             print("[Chess] Successfully connected to server, waiting for handshake...");
         } else {
-            print("[Chess] Failed to connect to server");
+            error("[Chess] Failed to connect to server");
         }
     }
 
@@ -250,31 +260,20 @@ void RenderPlayTab() {
  * Renders the Settings tab content
  */
 void RenderSettingsTab() {
-    UI::Text(themeSectionLabelColor + "Window Settings:");
-    UI::NewLine();
-
-    // Window resize toggle
-    string settingsButtonText = windowResizeable ? "Lock Window Size" : "Unlock Window Size";
-    UI::Text("Allow the window to be resized:");
-    if (StyledButton(settingsButtonText, vec2(150.0f, 0))) {
-        windowResizeable = !windowResizeable;
-    }
-
-    UI::NewLine();
 
     // Theme Settings Section
     UI::Text(themeSectionLabelColor + "Theme Settings:");
-
-    if (StyledButton("Customize Colors", vec2(200.0f, 30.0f))) {
+    UI::TextWrapped("Open the color customization window to change button and board colors, and thumbnail size and opacity.");
+    if (StyledButton("Customize Theme", vec2(200.0f, 30.0f))) {
         showColorCustomizationWindow = true;
     }
-    UI::TextWrapped("Open the color customization window to change button and board colors.");
 
     // Cache Management Section
     UI::NewLine();
     UI::NewLine();
 
     UI::Text(themeSectionLabelColor + "Cache Management:");
+    UI::TextWrapped("Clears all cached chess piece images, map thumbnails, and logo.");
     UI::NewLine();
 
     if (StyledButton("Clear All Cache", vec2(200.0f, 30.0f))) {
@@ -292,7 +291,6 @@ void RenderSettingsTab() {
         // Show re-download prompt
         showRedownloadPrompt = true;
     }
-    UI::TextWrapped("Clears all cached chess piece images, map thumbnails, and logo.");
 }
 
 /**
@@ -314,8 +312,8 @@ void RenderRedownloadPrompt() {
 
     UI::SetNextWindowSize(350, 150, UI::Cond::FirstUseEver);
     UI::SetNextWindowPos(
-        int(Draw::GetWidth() / 2.0f - 175),
-        int(Draw::GetHeight() / 2.0f - 75),
+        int(Display::GetWidth() / 2.0f - 175),
+        int(Display::GetHeight() / 2.0f - 75),
         UI::Cond::FirstUseEver
     );
 

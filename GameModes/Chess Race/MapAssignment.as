@@ -81,6 +81,11 @@ void ApplyServerBoardMaps(const Json::Value &in boardMapsJson) {
         return;
     }
 
+    // Ensure tag definitions are loaded for resolving tag IDs
+    if (!ThumbnailRendering::tagDefinitionsLoaded) {
+        ThumbnailRendering::LoadHardcodedTagDefinitions();
+    }
+
     uint arrayLength = boardMapsJson.Length;
     print("[MapAssignment] Applying " + arrayLength + " server-assigned maps...");
 
@@ -121,9 +126,29 @@ void ApplyServerBoardMaps(const Json::Value &in boardMapsJson) {
         boardMaps[row][col].mapName = mapName;
         boardMaps[row][col].thumbnailUrl = "https://trackmania.exchange/mapthumb/" + tmxId;
 
+        // Parse tag IDs and resolve to names/colors using hardcoded definitions
+        boardMaps[row][col].tags.RemoveRange(0, boardMaps[row][col].tags.Length);
+        if (mapObj.HasKey("tagIds") && mapObj["tagIds"].GetType() == Json::Type::String) {
+            string tagIdsStr = string(mapObj["tagIds"]);
+            if (tagIdsStr.Length > 0) {
+                array<string> tagIdParts = tagIdsStr.Split(",");
+                for (uint t = 0; t < tagIdParts.Length; t++) {
+                    string trimmed = tagIdParts[t].Trim();
+                    if (trimmed.Length == 0) continue;
+                    int tagId = Text::ParseInt(trimmed);
+                    if (tagId > 0) {
+                        RaceMode::MapTag@ tag = ThumbnailRendering::LookupTag(tagId);
+                        if (tag !is null) {
+                            boardMaps[row][col].tags.InsertLast(tag);
+                        }
+                    }
+                }
+            }
+        }
+
         // Log first few assignments and last one for debugging
         if (i < 3 || i == 63) {
-            print("[MapAssignment] Position " + i + " (row " + row + ", col " + col + "): " + mapName + " (TMX " + tmxId + ")");
+            print("[MapAssignment] Position " + i + " (row " + row + ", col " + col + "): " + mapName + " (TMX " + tmxId + "), tags: " + boardMaps[row][col].tags.Length);
         }
 
         mapsApplied++;

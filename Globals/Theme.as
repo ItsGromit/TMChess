@@ -12,6 +12,12 @@ enum BoardThemePreset {
     Chocolate
 }
 
+[Setting category="Thumbnails" name="Thumbnail Size" min=0.0f max=1.5f]
+float ThumbnailSize = 1.0f;
+
+[Setting category="Thumbnails" name="Thumbnail Opacity" min=0.0f max=1.0f]
+float ThumbnailOpacity = 0.3f;
+
 [Setting category="Theme" name="Selected Theme"]
 ThemePreset currentTheme = ThemePreset::Default;
 
@@ -20,7 +26,7 @@ BoardThemePreset currentBoardTheme = BoardThemePreset::Classic;
 
 // Window background color - can be customized by user
 [Setting category="Theme" name="Window Background Color"]
-vec4 themeWindowBgColor = vec4(0.0f, 0.0f, 0.0f, 0.4f);
+vec4 themeWindowBgColor = vec4(0.0f, 0.0f, 0.0f, 0.8f);
 
 // Theme colors - can be customized by user
 [Setting category="Theme" name="Active Tab Color"]
@@ -31,10 +37,10 @@ vec4 themeInactiveTabColor = vec4(0.26f, 0.26f, 0.26f, 1.0f);
 
 // Chess board colors - can be customized by user
 [Setting category="Theme" name="Light Square Color"]
-vec4 boardLightSquareColor = vec4(0.9f, 0.9f, 0.8f, 0.4f);
+vec4 boardLightSquareColor = vec4(0.9f, 0.9f, 0.8f, 1.0);
 
 [Setting category="Theme" name="Dark Square Color"]
-vec4 boardDarkSquareColor = vec4(0.5f, 0.4f, 0.3f, 0.4f);
+vec4 boardDarkSquareColor = vec4(0.5f, 0.4f, 0.3f, 1.0f);
 
 [Setting category="Theme" name="Selected Square Color"]
 vec4 boardSelectedSquareColor = vec4(0.3f, 0.7f, 0.3f, 1.0f);
@@ -81,13 +87,13 @@ void ApplyTheme(ThemePreset theme) {
     }
 }
 
-// Default theme (current colors with 40% window opacity)
+// Default theme (current colors with 70% window opacity)
 void ApplyDefaultTheme() {
-    themeWindowBgColor = vec4(0.0f, 0.0f, 0.0f, 0.4f);
+    themeWindowBgColor = vec4(0.0f, 0.0f, 0.0f, 0.8f);
     themeActiveTabColor = vec4(0.2f, 0.5f, 0.8f, 1.0f);
     themeInactiveTabColor = vec4(0.26f, 0.26f, 0.26f, 1.0f);
-    boardLightSquareColor = vec4(0.9f, 0.9f, 0.8f, 0.4f);
-    boardDarkSquareColor = vec4(0.5f, 0.4f, 0.3f, 0.4f);
+    boardLightSquareColor = vec4(0.9f, 0.9f, 0.8f, 1.0f);
+    boardDarkSquareColor = vec4(0.5f, 0.4f, 0.3f, 1.0f);
     boardSelectedSquareColor = vec4(0.3f, 0.7f, 0.3f, 1.0f);
     boardValidMoveColor = vec4(0.7f, 0.9f, 0.7f, 0.4f);
     themeSectionLabelColor = "\\$f80";
@@ -98,11 +104,11 @@ void ApplyDefaultTheme() {
 
 // Light theme - bright, clean colors with light grey background
 void ApplyLightTheme() {
-    themeWindowBgColor = vec4(0.85f, 0.85f, 0.85f, 0.9f);
+    themeWindowBgColor = vec4(0.85f, 0.85f, 0.85f, 0.5f);
     themeActiveTabColor = vec4(0.3f, 0.6f, 0.9f, 1.0f);
     themeInactiveTabColor = vec4(0.7f, 0.7f, 0.7f, 1.0f);
-    boardLightSquareColor = vec4(0.95f, 0.95f, 0.9f, 0.6f);
-    boardDarkSquareColor = vec4(0.7f, 0.65f, 0.55f, 0.6f);
+    boardLightSquareColor = vec4(0.95f, 0.95f, 0.9f, 1.0f);
+    boardDarkSquareColor = vec4(0.7f, 0.65f, 0.55f, 1.0f);
     boardSelectedSquareColor = vec4(0.4f, 0.75f, 0.4f, 1.0f);
     boardValidMoveColor = vec4(0.75f, 0.92f, 0.75f, 0.6f);
     themeSectionLabelColor = "\\$f70";
@@ -116,10 +122,10 @@ void ApplyDarkTheme() {
     themeWindowBgColor = vec4(0.1f, 0.1f, 0.1f, 0.9f);
     themeActiveTabColor = vec4(0.15f, 0.35f, 0.55f, 1.0f);
     themeInactiveTabColor = vec4(0.15f, 0.15f, 0.15f, 1.0f);
-    boardLightSquareColor = vec4(0.4f, 0.4f, 0.38f, 0.5f);
-    boardDarkSquareColor = vec4(0.2f, 0.18f, 0.15f, 0.5f);
-    boardSelectedSquareColor = vec4(0.25f, 0.5f, 0.25f, 1.0f);
-    boardValidMoveColor = vec4(0.35f, 0.55f, 0.35f, 0.5f);
+    boardLightSquareColor = vec4(0.9f, 0.9f, 0.8f, 0.7f);
+    boardDarkSquareColor = vec4(0.5f, 0.4f, 0.3f, 0.7f);
+    boardSelectedSquareColor = vec4(0.3f, 0.7f, 0.3f, 1.0f);
+    boardValidMoveColor = vec4(0.7f, 0.9f, 0.7f, 0.4f);
     themeSectionLabelColor = "\\$d60";
     themeSuccessTextColor = "\\$0d0";
     themeWarningTextColor = "\\$dd0";
@@ -131,20 +137,20 @@ void ApplyBoardTheme(BoardThemePreset boardTheme) {
 
     switch (boardTheme) {
         case BoardThemePreset::Classic:
-            boardLightSquareColor = vec4(0.9f, 0.9f, 0.8f, 0.4f);
-            boardDarkSquareColor = vec4(0.5f, 0.4f, 0.3f, 0.4f);
+            boardLightSquareColor = vec4(0.9f, 0.9f, 0.8f, 1.0f);
+            boardDarkSquareColor = vec4(0.5f, 0.4f, 0.3f, 1.0f);
             break;
         case BoardThemePreset::Ocean:
-            boardLightSquareColor = vec4(0.7f, 0.9f, 0.95f, 0.4f);
-            boardDarkSquareColor = vec4(0.2f, 0.5f, 0.7f, 0.4f);
+            boardLightSquareColor = vec4(0.7f, 0.9f, 0.95f, 1.0f);
+            boardDarkSquareColor = vec4(0.2f, 0.5f, 0.7f, 1.0f);
             break;
         case BoardThemePreset::Mossy:
-            boardLightSquareColor = vec4(0.8f, 0.9f, 0.7f, 0.4f);
-            boardDarkSquareColor = vec4(0.3f, 0.5f, 0.2f, 0.4f);
+            boardLightSquareColor = vec4(0.8f, 0.9f, 0.7f, 1.0f);
+            boardDarkSquareColor = vec4(0.3f, 0.5f, 0.2f, 1.0f);
             break;
         case BoardThemePreset::Chocolate:
-            boardLightSquareColor = vec4(0.8f, 0.7f, 0.6f, 0.4f);
-            boardDarkSquareColor = vec4(0.4f, 0.2f, 0.1f, 0.4f);
+            boardLightSquareColor = vec4(0.8f, 0.7f, 0.6f, 1.0f);
+            boardDarkSquareColor = vec4(0.4f, 0.2f, 0.1f, 1.0f);
             break;
     }
 }
