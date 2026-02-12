@@ -42,10 +42,6 @@ void Render() {
             collapseChessWindow = false;
         }
 
-        // Show race results window alongside chess board
-        if (showRaceResults) {
-            RenderRaceResultsWindow();
-        }
     }
 
     if (showWindow) {

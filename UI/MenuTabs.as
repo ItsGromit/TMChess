@@ -108,10 +108,6 @@ void RenderHomeTab() {
     UI::TextWrapped("- When attempting a capture, both players race on the destination square's map");
     UI::TextWrapped("- The winner of the race gets the piece, even if defending");
     UI::TextWrapped("- Right-click any square to see its map name and tags");
-    UI::Dummy(vec2(0, 5));
-    UI::TextWrapped("Classic Mode:");
-    UI::TextWrapped("- Maps are selected at random when attempting a capture");
-    UI::TextWrapped("- Capture only confirms if attacker beats the defender's time");
 
     UI::PopTextWrapPos();
     UI::EndGroup();
@@ -122,14 +118,13 @@ void RenderHomeTab() {
 
     UI::BeginGroup();
     UI::PushTextWrapPos(UI::GetCursorPos().x + rulesMaxWidth);
-    UI::TextWrapped("This plugin has taken around 300 hours of programming, testing, and debugging so I appreciate any support given.");
-    UI::TextWrapped(" To donate, use the KoFi link below, and to give suggestions or report bugs, create an issue on the github page.");
+    UI::TextWrapped("This plugin has taken 200+ hours of programming, testing, and debugging so I appreciate any support given. To donate, use the KoFi link below, and to give suggestions or report bugs, create an issue on the github page.");
+    UI::TextWrapped("PSA: the server is $5 US per month, every donation after $5 will be put back in to plugin development");
     UI::NewLine();
     UI::PopTextWrapPos();
 
     UI::EndGroup();
 
-    // Center "Thanks for playing and supporting!" text
     string thanksText = "Thanks for playing and supporting!";
     vec2 thanksSize = UI::MeasureString(thanksText);
     vec2 thanksAvailRegion = UI::GetContentRegionAvail();
@@ -143,14 +138,13 @@ void RenderHomeTab() {
     // Footer Section - Push to bottom and center
     vec2 footerAvailRegion = UI::GetContentRegionAvail();
 
-    // Add spacing to push footer to bottom (leaving room for separator and links)
-    float footerHeight = 55.0f; // Height needed for separator + links + padding
+    // Add spacing to push footer to bottom
+    float footerHeight = 55.0f;
     float spacerHeight = Math::Max(0.0f, footerAvailRegion.y - footerHeight - 20.0f);
     if (spacerHeight > 0) {
         UI::Dummy(vec2(0, spacerHeight));
     }
 
-    // Full-width separator
     UI::Separator();
     UI::NewLine();
 

@@ -32,7 +32,7 @@
                 l.open        = bool(e["open"]);
                 l.hasPassword = bool(e["hasPassword"]);
                 l.password    = l.hasPassword ? "*" : "";
-                l.raceMode    = e.HasKey("raceMode") ? string(e["raceMode"]) : "capture";
+                l.raceMode    = e.HasKey("raceMode") ? string(e["raceMode"]) : "square";
                 l.playerNames.Resize(0);
                 if (e["playerNames"].GetType() != Json::Type::Null) {
                     for (uint j = 0; j < e["playerNames"].Length; j++) {
@@ -49,12 +49,12 @@
             if (msg.HasKey("raceMode")) {
                 currentLobbyRaceMode = string(msg["raceMode"]);
                 // Update the global currentRaceMode enum
-                currentRaceMode = (currentLobbyRaceMode == "square") ? RaceMode::SquareRace : RaceMode::CaptureRace;
+                currentRaceMode = RaceMode::SquareRace;
             }
             // Initialize player names array (creator is the only player initially)
             currentLobbyPlayerNames.Resize(0);
             currentLobbyPlayerNames.InsertLast(GetLocalPlayerName());
-            print("[Chess Race Classic] Lobby successfully created - LobbyId: " + currentLobbyId);
+            print("[Chess] Lobby successfully created - LobbyId: " + currentLobbyId);
             GameManager::currentState = GameState::InLobby;
         }
         else if (t == "lobby_update") {
@@ -67,7 +67,7 @@
                 if (msg.HasKey("raceMode")) {
                     currentLobbyRaceMode = string(msg["raceMode"]);
                     // Update the global currentRaceMode enum
-                    currentRaceMode = (currentLobbyRaceMode == "square") ? RaceMode::SquareRace : RaceMode::CaptureRace;
+                    currentRaceMode = RaceMode::SquareRace;
                 }
                 // Store player names
                 currentLobbyPlayerNames.Resize(0);
@@ -80,10 +80,7 @@
                 if (currentLobbyId.Length > 0 &&
                     (GameManager::currentState == GameState::InQueue || GameManager::currentState == GameState::Menu)) {
                     GameManager::currentState = GameState::InLobby;
-                    // Request current map filters when joining lobby (only for Capture Race mode)
-                    if (currentLobbyRaceMode == "capture") {
-                        GetMapFilters(currentLobbyId);
-                    }
+                    GetMapFilters(currentLobbyId);
                 }
             }
         }
@@ -100,7 +97,7 @@
                 // Reset lobby state (similar to LeaveLobby)
                 currentLobbyId = "";
                 currentLobbyPassword = "";
-                currentLobbyRaceMode = "capture";
+                currentLobbyRaceMode = "square";
                 currentLobbyPlayerNames.Resize(0);
                 isHost = false;
 
@@ -121,7 +118,7 @@
                 // Reset lobby state
                 currentLobbyId = "";
                 currentLobbyPassword = "";
-                currentLobbyRaceMode = "capture";
+                currentLobbyRaceMode = "square";
                 currentLobbyPlayerNames.Resize(0);
                 isHost = false;
 
@@ -138,7 +135,7 @@
             // Receive race mode from server
             if (msg.HasKey("raceMode")) {
                 string raceModeStr = string(msg["raceMode"]);
-                currentRaceMode = (raceModeStr == "square") ? RaceMode::SquareRace : RaceMode::CaptureRace;
+                currentRaceMode = RaceMode::SquareRace;
 
                 // Receive mappack ID for Chess Race mode
                 if (msg.HasKey("mappackId")) {
@@ -184,16 +181,12 @@
                         // Apply server maps directly (can't pass Json::Value to startnew)
                         RaceMode::ApplyServerBoardMapsSync(msg["boardMaps"]);
                     } else if (boardMapsType == Json::Type::Null) {
-                        print("[Chess] boardMaps is null - client will assign maps locally (fallback)");
-                        startnew(RaceMode::InitializeAndAssignMaps);
+                        warn("[Chess] boardMaps is null - server should provide board maps");
                     } else {
                         warn("[Chess] boardMaps has unexpected type: " + tostring(boardMapsType));
-                        startnew(RaceMode::InitializeAndAssignMaps);
                     }
                 } else {
-                    // Client assigns maps as fallback
-                    print("[Chess] No boardMaps field - client will assign maps locally (fallback)");
-                    startnew(RaceMode::InitializeAndAssignMaps);
+                    warn("[Chess] No boardMaps field - server should provide board maps");
                 }
             }
 
@@ -267,7 +260,7 @@
             print("[Chess] gameId preserved for rematch: " + gameId);
         } else if (t == "race_challenge") {
             raceMapTmxId = int(msg["tmxId"]);
-            raceMapName = msg.HasKey("mapName") ? string(msg["mapName"]) : "Unknown Map";
+            raceMapName = msg.HasKey("mapName") ? string(msg["mapName"]) : RaceMode::MapAssignment::GetMapNameByTmxId(raceMapTmxId);
             isDefender = bool(msg["isDefender"]);
             captureFrom = string(msg["from"]);
             captureTo = string(msg["to"]);
@@ -421,7 +414,7 @@
 
             // Update map info and load new map
             raceMapTmxId = int(msg["tmxId"]);
-            raceMapName = msg.HasKey("mapName") ? string(msg["mapName"]) : "Unknown Map";
+            raceMapName = msg.HasKey("mapName") ? string(msg["mapName"]) : RaceMode::MapAssignment::GetMapNameByTmxId(raceMapTmxId);
 
             print("[Chess] New map: " + raceMapName + " (TMX ID: " + raceMapTmxId + ")");
             UI::ShowNotification("Chess", "Loading new map: " + raceMapName, vec4(0.2,0.8,0.2,1), 5000);
@@ -483,6 +476,10 @@
             string errorCode = string(msg["code"]);
             if (errorCode == "REMATCH_ALREADY_SENT") {
                 UI::ShowNotification("Chess", "You have already sent a rematch request", vec4(1,0.4,0.4,1), 4000);
+            } else if (errorCode == "INCORRECT_PASSWORD" || errorCode == "WRONG_PASSWORD") {
+                Lobby::showPasswordPrompt = true;
+                Lobby::showIncorrectPassword = true;
+                Lobby::passwordPromptInput = "";
             } else if (errorCode == "INVALID_PLAYER_COUNT") {
                 UI::ShowNotification("Chess", "Need exactly 2 players to start the game", vec4(1,0.4,0.4,1), 4000);
             } else {

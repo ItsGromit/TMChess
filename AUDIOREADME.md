@@ -16,6 +16,8 @@ This creates a familiar and satisfying audio feedback using sounds you already k
 
 ## Custom Sound Files (Optional)
 
+NOT IMPLEMENTED YET
+
 If you prefer custom sounds, you can disable "Use Game Sounds" in settings and add your own:
 
 1. Navigate to your Openplanet plugin storage folder:

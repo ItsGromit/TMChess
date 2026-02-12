@@ -98,7 +98,7 @@ void RenderPlayingState() {
  * Renders the move history panel and action buttons
  */
 void RenderMoveHistory(float moveHistoryWidth, float availableHeight, float belowBoardUIHeight) {
-    UI::BeginChild("MoveHistory", vec2(moveHistoryWidth, availableHeight - 40.0f), true);
+    UI::BeginChild("Move History", vec2(moveHistoryWidth, availableHeight - 40.0f), true);
     UI::Text("Move History:");
 
     // Display moves in proper chess notation: "1. e4 e5  2. Nf3 Nc6"

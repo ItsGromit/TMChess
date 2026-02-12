@@ -77,7 +77,12 @@ void SendJson(Json::Value &in j) {
         return;
     }
     string data = Json::Write(j) + "\n";
-    print("[Chess] Sending " + data.Length + " bytes: " + data.SubStr(0, 80));
+    Json::Value logJ = j;
+    if (logJ.HasKey("password")) {
+        logJ["password"] = "***";
+    }
+    string logData = Json::Write(logJ);
+    print("[Chess] Sending " + data.Length + " bytes: " + logData.SubStr(0, 80));
     sock.WriteRaw(data);
     print("[Chess] WriteRaw completed");
 }

@@ -9,9 +9,6 @@ namespace MapAssignment {
 // 8x8 grid of map assignments (indexed as [row][col])
 array<array<SquareMapData@>> boardMaps(8);
 
-/**
- * Initializes the board maps grid
- */
 void InitializeBoardMaps() {
     // Initialize 8x8 grid
     for (int row = 0; row < 8; row++) {
@@ -22,59 +19,6 @@ void InitializeBoardMaps() {
     }
 }
 
-/**
- * Associates a Trackmania map with a specific chess board square
- *
- * @param row The row index (0-7, where 0 is rank 1)
- * @param col The column index (0-7, where 0 is file 'a')
- * @param tmxId The Trackmania Exchange map ID
- * @param mapName Display name of the map
- * @param mapUid Unique map identifier
- * @param thumbnailUrl URL to fetch the map thumbnail
- * @param authorTime Author medal time in milliseconds
- * @param difficulty Difficulty rating 1-5
- * @return true on success, false on invalid parameters
- */
-bool AssignMapToSquare(int row, int col, int tmxId, const string &in mapName,
-                       const string &in mapUid, const string &in thumbnailUrl,
-                       int authorTime, int difficulty) {
-    // TODO: Implement map assignment logic
-    print("[ChessRace::MapAssignment] TODO: AssignMapToSquare(" + row + ", " + col + ", " + tmxId + ", " + mapName + ")");
-    return false;
-}
-
-/**
- * [DEPRECATED] Client-side map assignment removed
- * All map assignments now come from the server for perfect multiplayer sync
- * This function should never be called - server provides maps via ApplyServerBoardMaps()
- */
-void AssignMapsFromMappack(int) {
-    error("[ChessRace::MapAssignment] ERROR: Client-side map assignment is deprecated!");
-    error("[ChessRace::MapAssignment] Maps should be assigned by the server, not the client.");
-    error("[ChessRace::MapAssignment] Check that the server is sending boardMaps in game_start message.");
-}
-
-/**
- * [DEPRECATED] Client-side random map assignment removed
- * All map assignments now come from the server
- */
-void AssignRandomMapsToBoard() {
-    error("[ChessRace::MapAssignment] ERROR: Client-side random map assignment is deprecated!");
-    error("[ChessRace::MapAssignment] Maps should be assigned by the server, not the client.");
-}
-
-/**
- * Clears all map assignments from the board
- */
-void ClearBoardMaps() {
-    // TODO: Implement board map clearing
-    print("[ChessRace::MapAssignment] TODO: ClearBoardMaps()");
-}
-
-/**
- * Apply server-assigned board maps (for multiplayer sync)
- * The server sends an array of 64 map objects with tmxId and mapName
- */
 void ApplyServerBoardMaps(const Json::Value &in boardMapsJson) {
     if (boardMapsJson.GetType() != Json::Type::Array) {
         warn("[MapAssignment] Invalid boardMaps format from server - expected Array, got " + tostring(boardMapsJson.GetType()));
@@ -164,13 +108,6 @@ void ApplyServerBoardMaps(const Json::Value &in boardMapsJson) {
     }
 }
 
-/**
- * Retrieves the map data for a specific square
- *
- * @param row The row index (0-7)
- * @param col The column index (0-7)
- * @return Reference to SquareMapData, or null if invalid position
- */
 RaceMode::SquareMapData@ GetSquareMap(int row, int col) {
     if (row < 0 || row >= 8 || col < 0 || col >= 8) {
         return null;
@@ -178,6 +115,21 @@ RaceMode::SquareMapData@ GetSquareMap(int row, int col) {
     return boardMaps[row][col];
 }
 
-} // namespace MapAssignment
+string GetMapNameByTmxId(int tmxId, const string &in fallback = "Unknown Map") {
+    for (int r = 0; r < 8; r++) {
+        if (uint(r) >= boardMaps.Length) break;
+        if (boardMaps[r].Length == 0) continue;
+        for (int c = 0; c < 8; c++) {
+            if (uint(c) >= boardMaps[r].Length) break;
+            SquareMapData@ data = boardMaps[r][c];
+            if (data !is null && data.tmxId == tmxId && data.mapName.Length > 0) {
+                return data.mapName;
+            }
+        }
+    }
+    return fallback;
+}
 
-} // namespace ChessRace
+}
+
+}

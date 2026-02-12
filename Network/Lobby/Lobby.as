@@ -7,5 +7,5 @@ class Lobby {
     bool    hasPassword;
     string  password;
     array<string> playerNames;
-    string  raceMode = "capture";  // "square" or "capture"
+    string  raceMode = "square";
 }

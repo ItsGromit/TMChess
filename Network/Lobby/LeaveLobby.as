@@ -6,7 +6,7 @@ void LeaveLobby() {
     SendJson(j);
     currentLobbyId = "";
     currentLobbyPassword = "";
-    currentLobbyRaceMode = "capture";
+    currentLobbyRaceMode = "square";
     currentLobbyPlayerNames.Resize(0);
     isHost = false;
 }

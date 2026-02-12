@@ -18,7 +18,12 @@ void MainMenu() {
     UI::PushStyleColor(UI::Col::TitleBgActive, themeWindowBgColor);
     UI::PushStyleColor(UI::Col::TitleBgCollapsed, themeWindowBgColor);
 
-    if (UI::Begin("Chess Race Classic", showWindow, windowFlags)) {
+    if (collapseMainWindow) {
+        UI::SetNextWindowCollapsed(true);
+        collapseMainWindow = false;
+    }
+
+    if (UI::Begin("Chess Race", showWindow, windowFlags)) {
 
         switch (GameManager::currentState) {
             case GameState::Menu:
@@ -39,6 +44,9 @@ void MainMenu() {
 
             case GameState::Playing:
             case GameState::GameOver:
+                if (showRaceResults) {
+                    RenderRaceResultsInline();
+                }
                 RenderPlayingState();
                 break;
 
@@ -49,11 +57,14 @@ void MainMenu() {
     }
     UI::End();
 
+    // Collapse instead of closing when X button is clicked
+    if (!showWindow) {
+        showWindow = true;
+        collapseMainWindow = true;
+    }
+
     // Pop the window background and title bar style colors
     UI::PopStyleColor(4);
-
-    // Render map filters popup window (independent of main window)
-    Lobby::RenderMapFiltersWindow();
 
     // Render color customization window (independent of main window)
     ColorCustomization::RenderWindow();

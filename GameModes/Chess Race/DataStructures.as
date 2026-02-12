@@ -48,4 +48,4 @@ class OpponentCheckpointData {
     }
 }
 
-} // namespace ChessRace
+}

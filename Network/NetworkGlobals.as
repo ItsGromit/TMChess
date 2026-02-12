@@ -17,7 +17,7 @@ const string PLUGIN_VERSION = "1.0";
 string playerId;
 string currentLobbyId;
 string currentLobbyPassword;
-string currentLobbyRaceMode = "capture"; // Track the current lobby's race mode
+string currentLobbyRaceMode = "square"; // Track the current lobby's race mode
 array<string> currentLobbyPlayerNames; // Track players in current lobby
 string gameId;
 bool isWhite = false;

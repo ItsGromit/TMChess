@@ -26,7 +26,7 @@ BoardThemePreset currentBoardTheme = BoardThemePreset::Classic;
 
 // Window background color - can be customized by user
 [Setting category="Theme" name="Window Background Color"]
-vec4 themeWindowBgColor = vec4(0.0f, 0.0f, 0.0f, 0.8f);
+vec4 themeWindowBgColor = vec4(0.05f, 0.05f, 0.05f, 0.8f);
 
 // Theme colors - can be customized by user
 [Setting category="Theme" name="Active Tab Color"]
@@ -89,7 +89,7 @@ void ApplyTheme(ThemePreset theme) {
 
 // Default theme (current colors with 70% window opacity)
 void ApplyDefaultTheme() {
-    themeWindowBgColor = vec4(0.0f, 0.0f, 0.0f, 0.8f);
+    themeWindowBgColor = vec4(0.05f, 0.05f, 0.05f, 0.8f);
     themeActiveTabColor = vec4(0.2f, 0.5f, 0.8f, 1.0f);
     themeInactiveTabColor = vec4(0.26f, 0.26f, 0.26f, 1.0f);
     boardLightSquareColor = vec4(0.9f, 0.9f, 0.8f, 1.0f);

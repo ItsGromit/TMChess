@@ -1,7 +1,6 @@
 // Race Mode Selection
 enum RaceMode {
-    SquareRace,      // New mode: Each square has assigned map, race when clicking
-    CaptureRace      // Classic mode: Race only when capturing pieces
+    SquareRace      // Each square has assigned map, race when capturing
 }
 
 RaceMode currentRaceMode = RaceMode::SquareRace;

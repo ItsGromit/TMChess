@@ -520,6 +520,6 @@ void ClearThumbnailCache() {
     if (developerMode) print("[ThumbnailRendering] Cleared " + clearedMemoryCount + " thumbnails from memory, deleted " + deletedFileCount + " cached files");
 }
 
-} // namespace ThumbnailRendering
+}
 
-} // namespace RaceMode
+}

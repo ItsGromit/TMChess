@@ -6,9 +6,6 @@
 
 namespace Lobby {
 
-/**
- * Helper function to join array of strings with a separator
- */
 string JoinStrings(const array<string> &in arr, const string &in separator) {
     if (arr.Length == 0) return "";
     if (arr.Length == 1) return arr[0];
@@ -24,14 +21,13 @@ string JoinStrings(const array<string> &in arr, const string &in separator) {
 bool isCreatingLobby = false;
 string newLobbyTitle = "";
 string newLobbyPassword = "";
-string newLobbyRaceMode = "square"; // "capture" or "square" - default is Chess Race
 
-// Map filters window state
-bool showMapFiltersWindow = false;
+// Password prompt state
+bool showPasswordPrompt = false;
+string passwordPromptLobbyId = "";
+string passwordPromptInput = "";
+bool showIncorrectPassword = false;
 
-/**
- * Renders the lobby list browser
- */
 void RenderLobbyList() {
     UI::Text("\\$f80Available Lobbies:");
     UI::SameLine();
@@ -77,8 +73,9 @@ void RenderLobbyList() {
         if (lobby.open && lobby.players < 2) {
             if (StyledButton("Join", vec2(60.0f, 0))) {
                 if (lobby.hasPassword) {
-                    // TODO: Show password prompt
-                    JoinLobby(lobby.id, "");
+                    showPasswordPrompt = true;
+                    passwordPromptLobbyId = lobby.id;
+                    passwordPromptInput = "";
                 } else {
                     JoinLobby(lobby.id, "");
                 }
@@ -91,23 +88,44 @@ void RenderLobbyList() {
 
         UI::PopID();
     }
+
+    // Password prompt inline
+    if (showPasswordPrompt) {
+        UI::Separator();
+        if (showIncorrectPassword) {
+            UI::Text(themeWarningTextColor + "Incorrect password");
+        } else {
+            UI::Text("Enter password:");
+        }
+        UI::SetNextItemWidth(UI::GetContentRegionAvail().x);
+        passwordPromptInput = UI::InputText("##joinpassword", passwordPromptInput, UI::InputTextFlags::Password);
+
+        UI::NewLine();
+
+        if (StyledButton("Join", vec2(100.0f, 25.0f))) {
+            showIncorrectPassword = false;
+            JoinLobby(passwordPromptLobbyId, passwordPromptInput);
+        }
+
+        UI::SameLine();
+
+        if (StyledButton("Cancel", vec2(100.0f, 25.0f))) {
+            showPasswordPrompt = false;
+            showIncorrectPassword = false;
+            passwordPromptLobbyId = "";
+            passwordPromptInput = "";
+        }
+    }
 }
 
-/**
- * Renders the create lobby button
- */
 void RenderCreateLobby() {
     if (StyledButton("+ Create Lobby", vec2(150.0f, 30.0f))) {
         isCreatingLobby = true;
         newLobbyTitle = GetLocalPlayerName() + "'s Chess Lobby";
         newLobbyPassword = "";
-        newLobbyRaceMode = "square";
     }
 }
 
-/**
- * Renders the create lobby page with form
- */
 void RenderCreateLobbyPage() {
     UI::Text("\\$f80Create New Lobby");
     UI::Separator();
@@ -118,36 +136,19 @@ void RenderCreateLobbyPage() {
 
     UI::NewLine();
 
-    UI::Text("Game Mode:");
-    UI::SetNextItemWidth(200);
-    if (UI::BeginCombo("##gamemode", newLobbyRaceMode == "square" ? "Chess Race" : "Capture Race (Classic)")) {
-        if (UI::Selectable("Chess Race", newLobbyRaceMode == "square")) {
-            newLobbyRaceMode = "square";
-        }
-        if (UI::Selectable("Capture Race (Classic)", newLobbyRaceMode == "capture")) {
-            newLobbyRaceMode = "capture";
-        }
-        UI::EndCombo();
-    }
-
-    // Chess Race Mode Settings - show inline if Chess Race is selected
-    if (newLobbyRaceMode == "square") {
-        UI::SameLine();
-        UI::Text(" | Mappack:");
-        UI::SameLine();
-        UI::SetNextItemWidth(100);
-        string mappackIdStr = "" + squareRaceMappackId;
-        mappackIdStr = UI::InputText("##mappackid", mappackIdStr, UI::InputTextFlags::CharsDecimal);
-        int parsedId = Text::ParseInt(mappackIdStr);
-        if (parsedId > 0) squareRaceMappackId = parsedId;
-        if (squareRaceMappackId < 1) squareRaceMappackId = 1;
-        if (UI::IsItemHovered()) {
-            UI::BeginTooltip();
-            UI::PushTextWrapPos(250.0f);
-            UI::Text("TMX Mappack ID (default: 7237 for Chess Race). Find mappack IDs at trackmania.exchange");
-            UI::PopTextWrapPos();
-            UI::EndTooltip();
-        }
+    UI::Text("Mappack:");
+    UI::SetNextItemWidth(100);
+    string mappackIdStr = "" + squareRaceMappackId;
+    mappackIdStr = UI::InputText("##mappackid", mappackIdStr, UI::InputTextFlags::CharsDecimal);
+    int parsedId = Text::ParseInt(mappackIdStr);
+    if (parsedId > 0) squareRaceMappackId = parsedId;
+    if (squareRaceMappackId < 1) squareRaceMappackId = 1;
+    if (UI::IsItemHovered()) {
+        UI::BeginTooltip();
+        UI::PushTextWrapPos(250.0f);
+        UI::Text("TMX Mappack ID (default: 7237 for Chess Race). Find mappack IDs at trackmania.exchange");
+        UI::PopTextWrapPos();
+        UI::EndTooltip();
     }
 
     UI::NewLine();
@@ -166,7 +167,7 @@ void RenderCreateLobbyPage() {
     if (StyledButton("Create", vec2(100.0f, 30.0f))) {
         // Password is only set if the field is not blank
         string password = (newLobbyPassword.Length > 0) ? newLobbyPassword : "";
-        CreateLobby(newLobbyTitle, password, newLobbyRaceMode);
+        CreateLobby(newLobbyTitle, password);
         isCreatingLobby = false;
     }
 
@@ -177,9 +178,6 @@ void RenderCreateLobbyPage() {
     }
 }
 
-/**
- * Renders the current lobby (when in lobby waiting room)
- */
 void RenderCurrentLobby() {
     // Show players in lobby
     UI::Text("Players (" + currentLobbyPlayerNames.Length + "/2):");
@@ -193,7 +191,7 @@ void RenderCurrentLobby() {
                 // Non-host players - show kick button for host
                 if (isHost) {
                     UI::PushID("kick_" + i);
-                    if (UI::Button("  " + playerName + " " + Icons::Times, vec2(0, 20))) {
+                    if (StyledButton("  " + playerName + " " + Icons::Times, vec2(0, 20))) {
                         KickPlayer(playerName);
                     }
                     if (UI::IsItemHovered()) {
@@ -232,15 +230,6 @@ void RenderCurrentLobby() {
                 UI::EndTooltip();
             }
         }
-
-        // Only show Map Filters button for Capture Race mode
-        if (currentLobbyRaceMode == "capture") {
-            UI::SameLine();
-
-            if (StyledButton("Map Filters", vec2(150.0f, 30.0f))) {
-                showMapFiltersWindow = true;
-            }
-        }
     } else {
         UI::TextDisabled("Waiting for host to start...");
     }
@@ -253,72 +242,4 @@ void RenderCurrentLobby() {
     }
 }
 
-/**
- * Renders the map filters configuration window
- */
-void RenderMapFiltersWindow() {
-    if (!showMapFiltersWindow) return;
-
-    UI::SetNextWindowSize(400, 500, UI::Cond::Appearing);
-    UI::SetNextWindowPos(100, 100, UI::Cond::Appearing);
-
-    if (UI::Begin("Map Filters", showMapFiltersWindow, UI::WindowFlags::NoCollapse)) {
-        UI::TextWrapped("Configure which maps can be selected for races in this lobby.");
-        UI::Separator();
-
-        // Author time filters
-        UI::Text("Author Time Range:");
-        UI::SetNextItemWidth(150);
-        mapFilterAuthorTimeMin = UI::InputInt("Min (seconds)##authortimemin", mapFilterAuthorTimeMin);
-        UI::SetNextItemWidth(150);
-        mapFilterAuthorTimeMax = UI::InputInt("Max (seconds)##authortimemax", mapFilterAuthorTimeMax);
-
-        UI::NewLine();
-
-        // Tag filters
-        UI::Text("Required Tags:");
-        UI::TextDisabled("Tags that maps MUST have");
-        // TODO: Tag selection UI
-
-        UI::NewLine();
-
-        UI::Text("Excluded Tags:");
-        UI::TextDisabled("Tags that maps MUST NOT have");
-        // TODO: Exclusion tag selection UI
-
-        UI::NewLine();
-        UI::Separator();
-
-        if (isHost && StyledButton("Apply Filters", vec2(150.0f, 30.0f))) {
-            // Build filters JSON object
-            Json::Value filters = Json::Object();
-            filters["authortimemin"] = mapFilterAuthorTimeMin;
-            filters["authortimemax"] = mapFilterAuthorTimeMax;
-
-            // Add required tags (whitelist mode)
-            Json::Value tagsArray = Json::Array();
-            for (uint i = 0; i < mapFilterSelectedTags.Length; i++) {
-                tagsArray.Add(mapFilterSelectedTags[i]);
-            }
-            filters["tags"] = tagsArray;
-
-            // Add excluded tags (blacklist - includes default Kacky/LOL)
-            Json::Value excludeTagsArray = Json::Array();
-            for (uint i = 0; i < mapFilterBlacklistedTags.Length; i++) {
-                excludeTagsArray.Add(mapFilterBlacklistedTags[i]);
-            }
-            filters["excludeTags"] = excludeTagsArray;
-
-            SetMapFilters(currentLobbyId, filters);
-        }
-
-        UI::SameLine();
-
-        if (StyledButton("Close", vec2(100.0f, 30.0f))) {
-            showMapFiltersWindow = false;
-        }
-    }
-    UI::End();
 }
-
-} // namespace Lobby

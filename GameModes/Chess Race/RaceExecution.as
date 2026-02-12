@@ -10,10 +10,6 @@ namespace RaceExecution {
 int pendingCaptureRow = -1;
 int pendingCaptureCol = -1;
 
-/**
- * Wrapper function for startnew to fetch square race map
- * Sets global pending coordinates first
- */
 void FetchSquareRaceMapWrapper() {
     if (pendingCaptureRow >= 0 && pendingCaptureCol >= 0) {
         FetchSquareRaceMap(pendingCaptureRow, pendingCaptureCol);
@@ -22,16 +18,6 @@ void FetchSquareRaceMapWrapper() {
     }
 }
 
-/**
- * Loads the map assigned to a specific square for a capture race
- * This is called when a capture move is attempted in Chess Race mode
- *
- * IMPORTANT: Races only happen on capture attempts (attacker vs defender).
- * The map loaded is the one assigned to the destination square (where the capture would occur).
- *
- * @param row The row of the capture destination square
- * @param col The column of the capture destination square
- */
 void FetchSquareRaceMap(int row, int col) {
     print("[ChessRace::RaceExecution] FetchSquareRaceMap for square [" + row + ", " + col + "]");
 
@@ -62,49 +48,10 @@ void FetchSquareRaceMap(int row, int col) {
     DownloadAndLoadMapFromTMX(mapData.tmxId, mapData.mapName);
 }
 
-/**
- * Executes the race mode when a player selects a square
- *
- * @param row The row of the selected square
- * @param col The column of the selected square
- */
-void ExecuteRaceMode(int row, int col) {
-    print("[ChessRace::RaceExecution] TODO: ExecuteRaceMode(" + row + ", " + col + ")");
-
-    SquareMapData@ mapData = MapAssignment::GetSquareMap(row, col);
-    if (mapData is null) {
-        print("[ChessRace::RaceExecution] Error: No map assigned to square [" + row + ", " + col + "]");
-        return;
-    }
-
-    selectedSquareRow = row;
-    selectedSquareCol = col;
-    isRacingSquareMode = true;
-}
-
-/**
- * Handles race completion for the local player
- *
- * @param finalTime Player's final race time in milliseconds
- */
-void HandleRaceCompletion(int finalTime) {
-    print("[ChessRace::RaceExecution] TODO: HandleRaceCompletion(" + finalTime + "ms)");
-}
-
-/**
- * Handles player giving up / DNF during race
- */
-void HandleRaceDNF() {
-    print("[ChessRace::RaceExecution] TODO: HandleRaceDNF()");
-}
-
-/**
- * Updates race state each frame (called from main Update loop)
- */
 void UpdateRaceState() {
     if (!isRacingSquareMode) return;
 }
 
-} // namespace RaceExecution
+}
 
-} // namespace ChessRace
+}

@@ -13,34 +13,20 @@ SGamePlaygroundUIConfig::EUISequence lastSeq = SGamePlaygroundUIConfig::EUISeque
 int stableRaceTime = -1;
 int stableRaceTimeFrames = 0;
 
-// Give Up detection via MLFeed spawn status
-bool spawnLatch = false;
-bool resetProtection = false;
-string curMap = "";
-bool verboseMode = false;
-uint lastSpawnIndex = 0;
+// Give Up detection via MLFeed SpawnStatus transitions
+MLFeed::SpawnStatus lastSpawnStatus = MLFeed::SpawnStatus::Spawning;
+bool giveUpDetectorRunning = false;
+bool lastFinishState = false;
 
 // Checkpoint tracking
 int lastCheckpointCount = 0;
 array<int> playerCheckpointTimes;  // Store player's checkpoint times for display
 
-/**
- * Resets the give-up detection state when starting a new race
- */
-void ResetGiveUpDetection() {
-    spawnLatch = false;
-    resetProtection = true;
-    lastSpawnIndex = 0;
 
-    // Get current spawn index to establish baseline
-    auto raceData = MLFeed::GetRaceData_V4();
-    if (raceData !is null) {
-        auto playerData = raceData.GetPlayer_V4(MLFeed::LocalPlayersName);
-        if (playerData !is null) {
-            lastSpawnIndex = playerData.SpawnIndex;
-            if (verboseMode) print("[GiveUp] Reset detection, baseline SpawnIndex: " + lastSpawnIndex);
-        }
-    }
+void ResetGiveUpDetection() {
+    lastSpawnStatus = MLFeed::SpawnStatus::Spawning;
+    giveUpDetectorRunning = false;
+    lastFinishState = false;
 }
 
 /**
@@ -97,68 +83,59 @@ void CheckCheckpoints() {
     }
 }
 
-/**
- * Check if player gave up using MLFeed spawn status tracking
- * Returns true if player gave up (DNF was triggered)
- */
+
 bool CheckGiveUp() {
-    // Get race data from MLFeed
     auto raceData = MLFeed::GetRaceData_V4();
-    if (raceData is null) {
-        return false;
-    }
+    if (raceData is null) return false;
 
-    // Get local player data
     auto playerData = raceData.GetPlayer_V4(MLFeed::LocalPlayersName);
-    if (playerData is null) {
+    if (playerData is null) return false;
+
+    // Start tracking once the player begins racing
+    if (!giveUpDetectorRunning && playerData.CurrentRaceTime < 0
+        && playerData.SpawnStatus == MLFeed::SpawnStatus::Spawning) {
+        giveUpDetectorRunning = true;
         return false;
     }
 
-    // Check if SpawnIndex has increased (indicates respawn/give up)
-    uint currentSpawnIndex = playerData.SpawnIndex;
+    // Detect SpawnStatus transitions while running
+    if (giveUpDetectorRunning && playerData.SpawnStatus != lastSpawnStatus) {
+        lastSpawnStatus = playerData.SpawnStatus;
 
-    // Reset protection: skip the first check after race starts
-    if (resetProtection) {
-        lastSpawnIndex = currentSpawnIndex;
-        resetProtection = false;
-        if (verboseMode) print("[GiveUp] Protection reset, SpawnIndex: " + currentSpawnIndex);
-        return false;
+        // If status changed back to Spawning without finishing, it's a give-up
+        if (!lastFinishState && playerData.SpawnStatus == MLFeed::SpawnStatus::Spawning) {
+            print("[GiveUp] Player gave up! SpawnStatus transitioned back to Spawning");
+
+            playerDNF = true;
+            playerFinishedRace = true;
+
+            Json::Value j = Json::Object();
+            j["type"] = "dnf";
+            j["gameId"] = gameId;
+            SendJson(j);
+            print("[GiveUp] Sent DNF to server");
+
+            GameManager::currentState = GameState::Playing;
+            raceStartedAt = 0;
+
+            return true;
+        }
     }
 
-    // If spawn index increased, player respawned (gave up)
-    if (currentSpawnIndex > lastSpawnIndex) {
-        print("[GiveUp] Player gave up! SpawnIndex changed from " + lastSpawnIndex + " to " + currentSpawnIndex);
-
-        // Mark as DNF
-        playerDNF = true;
-        playerFinishedRace = true;
-
-        // Send DNF to server
-        Json::Value j = Json::Object();
-        j["type"] = "dnf";
-        j["gameId"] = gameId;
-        SendJson(j);
-        print("[GiveUp] Sent DNF to server");
-
-        // Exit race challenge state and reopen chess window
-        GameManager::currentState = GameState::Playing;
-        raceStartedAt = 0;
-
-        return true;
+    // Track finish state to avoid false positives on post-finish respawns
+    if (playerData.IsFinished) {
+        lastFinishState = true;
+    } else if (playerData.SpawnStatus == MLFeed::SpawnStatus::Spawned) {
+        lastFinishState = false;
     }
 
-    lastSpawnIndex = currentSpawnIndex;
     return false;
 }
 
-/**
- * Main update function for race state management
- * Call this every frame from the main Update loop
- */
 void Update() {
     // Handle race state management
     if (GameManager::currentState == GameState::RaceChallenge && !playerFinishedRace) {
-        // FIRST: Check if player finished the race (using TrackmaniaBingo's exact approach)
+        // FIRST: Check if player finished the race (using TrackmaniaBingo's approach)
         // This must be checked BEFORE IsPlayerReady() because UISequence changes from Playing to Finish
         auto app = cast<CTrackMania>(GetApp());
         auto playground = cast<CSmArenaClient>(app.CurrentPlayground);
@@ -235,11 +212,10 @@ void Update() {
         // Check for give up via MLFeed spawn status (runs independently of IsPlayerReady)
         if (raceStartedAt > 0) {
             if (CheckGiveUp()) {
-                return;  // Player gave up, DNF was triggered
+                return;
             }
         }
 
-        // SECOND: Check if player is ready to race (for ongoing race tracking)
         if (IsPlayerReady()) {
             if (raceStartedAt == 0) {
                 // Player is now ready and in the race
@@ -251,10 +227,6 @@ void Update() {
 
                 // Reset local checkpoint tracking for this new race
                 ResetCheckpointTracking();
-
-                // Don't reset opponent data here - it was already reset when the
-                // race_challenge message was received, and the opponent may have
-                // started racing and sent checkpoints while we were still loading.
 
                 // Send race_started message to server
                 Json::Value j = Json::Object();
@@ -329,4 +301,4 @@ void Update() {
     }
 }
 
-} // namespace RaceStateManager
+}
