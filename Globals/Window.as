@@ -1,7 +1,6 @@
 bool showWindow = false;
 bool windowResizeable = false;
 bool showColorCustomizationWindow = false;
-bool showRedownloadPrompt = false;
 bool collapseChessWindow = false;
 bool collapseMainWindow = false;
 bool showThumbnails = true;

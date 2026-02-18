@@ -23,7 +23,7 @@ I did use claude code to HELP with the development of this (I still wrote most o
 
 ### Audio Integration
 
-- **Built-in Sounds** - Uses the official Chess.com sounds
+- **Built-in Sounds** - Uses official lichess sounds (they are open source)
 
 **NOT YET IMPLEMENTED**
 - **Custom Sounds** - Option to use your own sound effects (see [AUDIOREADME.md](AUDIOREADME.md))

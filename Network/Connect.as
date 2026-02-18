@@ -13,9 +13,9 @@ bool Connect() {
     handshakeSent = false;  // Reset - will send in Update() when socket is ready
     connectionStartTime = Time::Now;  // Record when we started connecting
     if (ok) {
-        print("[Chess] Connection initiated, waiting for socket to be ready...");
+        trace("[Chess] Connection initiated, waiting for socket to be ready...");
     } else {
-        print("[Chess] Socket connection failed!");
+        trace("[Chess] Socket connection failed!");
     }
     return ok;
 }
@@ -39,18 +39,18 @@ void Update() {
     // Send handshake once socket is ready (after TCP connection established)
     // Wait 200ms after connection to ensure TCP handshake is complete
     if (!handshakeSent && (Time::Now - connectionStartTime) > 200 && sock.IsReady()) {
-        print("[Chess] Socket ready, sending handshake...");
+        trace("[Chess] Socket ready, sending handshake...");
         Json::Value handshake = Json::Object();
         handshake["type"] = "handshake";
         handshake["version"] = PLUGIN_VERSION;
         SendJson(handshake);
         handshakeSent = true;
-        print("[Chess] Handshake sent, waiting for server response...");
+        trace("[Chess] Handshake sent, waiting for server response...");
     }
 
     string chunk = sock.ReadRaw(32768);
     if (chunk.Length == 0) return;
-    print("[Chess] Received data: " + chunk.Length + " bytes");
+    if (developerMode) print("[Chess] Received data: " + chunk.Length + " bytes");
     _buf += chunk;
     int nl;
     while ((nl = _buf.IndexOf("\n")) >= 0) {
@@ -63,17 +63,17 @@ void Update() {
             if (msg.GetType() == Json::Type::Object) {
                 HandleMsg(msg);
             } else {
-                print("Network::Update - Parsed JSON is not an object: " + line);
+                trace("Network::Update - Parsed JSON is not an object: " + line);
             }
         } catch {
-            print("Network::Update - JSON parse error: " + line);
+            error("Network::Update - JSON parse error: " + line);
         }
     }
 }
 // Send JSON function
 void SendJson(Json::Value &in j) {
     if (!isConnected || sock is null) {
-        print("[Chess] SendJson failed - not connected");
+        error("[Chess] SendJson failed - not connected");
         return;
     }
     string data = Json::Write(j) + "\n";
@@ -82,7 +82,7 @@ void SendJson(Json::Value &in j) {
         logJ["password"] = "***";
     }
     string logData = Json::Write(logJ);
-    print("[Chess] Sending " + data.Length + " bytes: " + logData.SubStr(0, 80));
+    if (developerMode) trace("[Chess] Sending " + data.Length + " bytes: " + logData.SubStr(0, 80));
     sock.WriteRaw(data);
-    print("[Chess] WriteRaw completed");
+    if (developerMode) trace("[Chess] WriteRaw completed");
 }

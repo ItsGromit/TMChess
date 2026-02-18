@@ -13,19 +13,19 @@ bool isRacingSquareMode = false;
 // ============================================================================
 
 void InitializeChessRace() {
-    print("[ChessRace] Initializing Chess Race mode...");
+    trace("[ChessRace] Initializing Chess Race mode...");
 
     MapAssignment::InitializeBoardMaps();
     OpponentTracking::ResetOpponentData();
     isRacingSquareMode = false;
 
-    print("[ChessRace] Initialization complete");
+    trace("[ChessRace] Initialization complete");
 }
 
 void ApplyServerBoardMapsSync(const Json::Value &in boardMapsJson) {
     InitializeChessRace();
 
-    print("[ChessRace] Applying server-assigned board maps...");
+    if (developerMode) trace("[ChessRace] Applying server-assigned board maps...");
     MapAssignment::ApplyServerBoardMaps(boardMapsJson);
 
     // Preload thumbnails if enabled (async)

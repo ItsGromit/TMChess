@@ -92,7 +92,7 @@ void ApplyServerBoardMaps(const Json::Value &in boardMapsJson) {
 
         // Log first few assignments and last one for debugging
         if (i < 3 || i == 63) {
-            print("[MapAssignment] Position " + i + " (row " + row + ", col " + col + "): " + mapName + " (TMX " + tmxId + "), tags: " + boardMaps[row][col].tags.Length);
+            if (developerMode) print("[MapAssignment] Position " + i + " (row " + row + ", col " + col + "): " + mapName + " (TMX " + tmxId + "), tags: " + boardMaps[row][col].tags.Length);
         }
 
         mapsApplied++;
@@ -102,9 +102,11 @@ void ApplyServerBoardMaps(const Json::Value &in boardMapsJson) {
 
     // Verify a few random squares to ensure data persisted
     if (mapsApplied > 0) {
-        print("[MapAssignment] Verification - Square [0,0]: " + (boardMaps[0][0] !is null ? boardMaps[0][0].mapName : "NULL"));
-        print("[MapAssignment] Verification - Square [3,4]: " + (boardMaps[3][4] !is null ? boardMaps[3][4].mapName : "NULL"));
-        print("[MapAssignment] Verification - Square [7,7]: " + (boardMaps[7][7] !is null ? boardMaps[7][7].mapName : "NULL"));
+        if (developerMode) {
+            print("[MapAssignment] Verification - Square [0,0]: " + (boardMaps[0][0] !is null ? boardMaps[0][0].mapName : "NULL"));
+            print("[MapAssignment] Verification - Square [3,4]: " + (boardMaps[3][4] !is null ? boardMaps[3][4].mapName : "NULL"));
+            print("[MapAssignment] Verification - Square [7,7]: " + (boardMaps[7][7] !is null ? boardMaps[7][7].mapName : "NULL"));
+        }
     }
 }
 

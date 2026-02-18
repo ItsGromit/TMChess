@@ -29,17 +29,13 @@ void ResetGiveUpDetection() {
     lastFinishState = false;
 }
 
-/**
- * Resets checkpoint tracking for a new race
- */
+// Resets checkpoint tracking
 void ResetCheckpointTracking() {
     lastCheckpointCount = 0;
     playerCheckpointTimes.RemoveRange(0, playerCheckpointTimes.Length);
 }
 
-/**
- * Checks for new checkpoints and sends them to the server
- */
+// Checks for new checkpoints then sends to server
 void CheckCheckpoints() {
     auto raceData = MLFeed::GetRaceData_V4();
     if (raceData is null) return;
@@ -104,6 +100,7 @@ bool CheckGiveUp() {
 
         // If status changed back to Spawning without finishing, it's a give-up
         if (!lastFinishState && playerData.SpawnStatus == MLFeed::SpawnStatus::Spawning) {
+            auto app = cast<CTrackMania>(GetApp());
             print("[GiveUp] Player gave up! SpawnStatus transitioned back to Spawning");
 
             playerDNF = true;
@@ -116,6 +113,7 @@ bool CheckGiveUp() {
             print("[GiveUp] Sent DNF to server");
 
             GameManager::currentState = GameState::Playing;
+            app.BackToMainMenu();
             raceStartedAt = 0;
 
             return true;
@@ -135,8 +133,6 @@ bool CheckGiveUp() {
 void Update() {
     // Handle race state management
     if (GameManager::currentState == GameState::RaceChallenge && !playerFinishedRace) {
-        // FIRST: Check if player finished the race (using TrackmaniaBingo's approach)
-        // This must be checked BEFORE IsPlayerReady() because UISequence changes from Playing to Finish
         auto app = cast<CTrackMania>(GetApp());
         auto playground = cast<CSmArenaClient>(app.CurrentPlayground);
         auto playgroundScript = cast<CGamePlaygroundScript>(app.PlaygroundScript);
@@ -146,15 +142,13 @@ void Update() {
             CGameTerminal@ terminal = playground.GameTerminals[0];
             auto seq = terminal.UISequence_Current;
 
-            // Debug: Log UISequence changes
             if (seq != lastSeq) {
-                print("[RaceDetection] UISequence changed to: " + tostring(seq));
+                trace("[RaceDetection] UISequence changed to: " + tostring(seq));
                 lastSeq = seq;
             }
 
-            // Check UISequence FIRST before anything else (TrackmaniaBingo pattern)
             if (seq == SGamePlaygroundUIConfig::EUISequence::Finish) {
-                print("[RaceDetection] Player in Finish state, attempting to retrieve ghost");
+                trace("[RaceDetection] Player in Finish state, attempting to retrieve ghost");
 
                 CSmPlayer@ player = cast<CSmPlayer>(terminal.ControlledPlayer);
                 if (player !is null && player.ScriptAPI !is null) {
@@ -162,18 +156,18 @@ void Update() {
 
                     // Retrieve ghost data (TrackmaniaBingo method)
                     auto ghost = cast<CSmArenaRulesMode>(playgroundScript).Ghost_RetrieveFromPlayer(playerScriptAPI);
-                    print("[RaceDetection] Ghost retrieved: " + (ghost !is null ? "yes" : "null"));
+                    trace("[RaceDetection] Ghost retrieved: " + (ghost !is null ? "yes" : "null"));
 
                     if (ghost !is null && ghost.Result !is null) {
                         int finalTime = ghost.Result.Time;
-                        print("[RaceDetection] Ghost result time: " + finalTime);
+                        trace("[RaceDetection] Ghost result time: " + finalTime);
 
                         // Release ghost (TrackmaniaBingo does this)
                         playgroundScript.DataFileMgr.Ghost_Release(ghost.Id);
 
                         // Validate time (TrackmaniaBingo check: > 0 and < uint max)
                         if (finalTime > 0 && finalTime < 4294967295) {
-                            print("[RaceDetection] Player finished race with time: " + finalTime + "ms (UISequence::Finish)");
+                            trace("[RaceDetection] Player finished race with time: " + finalTime + "ms (UISequence::Finish)");
 
                             playerFinishedRace = true;
                             playerRaceTime = finalTime;
@@ -184,7 +178,7 @@ void Update() {
                             j["gameId"] = gameId;
                             j["time"] = playerRaceTime;
                             SendJson(j);
-                            print("[RaceDetection] Sent race_result to server: " + playerRaceTime + "ms");
+                            trace("[RaceDetection] Sent race_result to server: " + playerRaceTime + "ms");
 
                             // Send player back to main menu but keep race window open
                             auto app2 = cast<CTrackMania>(GetApp());
@@ -195,16 +189,16 @@ void Update() {
 
                             return;
                         } else {
-                            print("[RaceDetection] finalTime validation failed: " + finalTime + " (must be > 0 and < 4294967295)");
+                            error("[RaceDetection] finalTime validation failed: " + finalTime + " (must be > 0 and < 4294967295)");
                         }
                     } else {
                         if (ghost !is null) {
                             playgroundScript.DataFileMgr.Ghost_Release(ghost.Id);
                         }
-                        print("[RaceDetection] Ghost or Result is null");
+                        trace("[RaceDetection] Ghost or Result is null");
                     }
                 } else {
-                    print("[RaceDetection] Player or ScriptAPI is null");
+                    trace("[RaceDetection] Player or ScriptAPI is null");
                 }
             }
         }
@@ -250,7 +244,7 @@ void Update() {
                         if (score.BestRaceTimes.Length > 0 && score.BestRaceTimes[0] > 0) {
                             int finalTime = int(score.BestRaceTimes[0]);
 
-                            print("[RaceDetection] Player finished! BestRaceTime: " + finalTime + "ms");
+                            print("[RaceDetection] Player finished! Race Time: " + finalTime + "ms");
 
                             playerFinishedRace = true;
                             playerRaceTime = finalTime;

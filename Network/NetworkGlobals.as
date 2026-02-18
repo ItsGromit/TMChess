@@ -17,21 +17,11 @@ const string PLUGIN_VERSION = "1.0";
 string playerId;
 string currentLobbyId;
 string currentLobbyPassword;
-string currentLobbyRaceMode = "square"; // Track the current lobby's race mode
-array<string> currentLobbyPlayerNames; // Track players in current lobby
+string currentLobbyRaceMode = "square";
+array<string> currentLobbyPlayerNames;
 string gameId;
 bool isWhite = false;
 bool isHost = false;
-
-// ================
-// Map Filter variables
-// ================
-int mapFilterAuthorTimeMax = 300; // No real limit by default (5 minutes max)
-int mapFilterAuthorTimeMin = 0;
-array<string> mapFilterSelectedTags;
-array<string> mapFilterBlacklistedTags = {"Kacky", "LOL"}; // Default blacklist
-bool mapFiltersChanged = false;
-bool useTagWhitelist = false; // Default to blacklist mode with Kacky and LOL excluded
 
 // ==============
 // Race variables
@@ -42,17 +32,13 @@ bool isDefender = false;
 int defenderTime = -1;
 string captureFrom = "";
 string captureTo = "";
-int activeMappackId = 7237; // Mappack ID received from server for current game
+int activeMappackId = 7237; // Mappack ID received for current game
 
 // Live race tracking
-bool opponentIsRacing = false;       // Whether opponent is currently racing
-uint64 opponentRaceStartedAt = 0;    // Timestamp when opponent started racing (for local time calculation)
-int opponentFinalTime = -1;          // Opponent's final race time when they finish (-1 if not finished)
+bool opponentIsRacing = false;
+uint64 opponentRaceStartedAt = 0;
+int opponentFinalTime = -1;
 
-/**
- * Gets the opponent's current race time calculated locally.
- * Returns the final time if opponent finished, calculates live time if racing, or -1 if not racing.
- */
 int GetOpponentRaceTime() {
     // If opponent finished, return their final time
     if (opponentFinalTime > 0) {
@@ -66,11 +52,11 @@ int GetOpponentRaceTime() {
 }
 
 // Race result tracking (to keep results window open after returning to board)
-bool showRaceResults = false;        // Whether to show race results window
-bool lastRaceCaptureSucceeded = false; // Whether the last race capture succeeded
-int lastRacePlayerTime = -1;         // Player's final time in last race
-int lastRaceOpponentTime = -1;       // Opponent's final time in last race
-bool lastRacePlayerWasDefender = false; // Whether player was defender in last race
+bool showRaceResults = false;
+bool lastRaceCaptureSucceeded = false;
+int lastRacePlayerTime = -1;
+int lastRaceOpponentTime = -1;
+bool lastRacePlayerWasDefender = false;
 
 const array<string> FILES = {"a", "b", "c", "d", "e", "f", "g", "h"};
 

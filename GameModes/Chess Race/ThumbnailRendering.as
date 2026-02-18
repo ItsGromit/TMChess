@@ -294,10 +294,9 @@ void RenderMapThumbnail(int row, int col) {
 dictionary tagDefinitions;
 bool tagDefinitionsLoaded = false;
 
-/**
- * Loads hardcoded TMX tag definitions (ID -> Name, Color mapping)
- * Called by MapAssignment when applying server board maps
- */
+
+// Loads hardcoded TMX tag definitions (ID -> Name, Color mapping)
+// Called by MapAssignment when applying server board maps
 void LoadHardcodedTagDefinitions() {
     if (tagDefinitionsLoaded) return;
 

@@ -23,13 +23,13 @@ void FetchSquareRaceMap(int row, int col) {
 
     SquareMapData@ mapData = MapAssignment::GetSquareMap(row, col);
     if (mapData is null || mapData.tmxId == -1) {
-        print("[ChessRace::RaceExecution] Error: No map assigned to square [" + row + ", " + col + "]");
+        error("[ChessRace::RaceExecution] Error: No map assigned to square [" + row + ", " + col + "]");
         UI::ShowNotification("Chess", "Error: No map assigned to this square", vec4(1,0.4,0.4,1), 4000);
         return;
     }
 
     // Use the assigned map for this square
-    print("[ChessRace::RaceExecution] Loading assigned map: " + mapData.mapName + " (TMX ID: " + mapData.tmxId + ")");
+    trace("[ChessRace::RaceExecution] Loading assigned map: " + mapData.mapName + " (TMX ID: " + mapData.tmxId + ")");
 
     // Set the race map details (these are used by the race UI)
     raceMapTmxId = mapData.tmxId;

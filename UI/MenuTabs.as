@@ -34,7 +34,7 @@ void RenderMenuState() {
     UI::PushStyleColor(UI::Col::Button, currentMenuTab == MenuTab::Play ? themeActiveTabColor : themeInactiveTabColor);
     UI::PushStyleColor(UI::Col::ButtonHovered, themeActiveTabColor);
     UI::PushStyleColor(UI::Col::ButtonActive, themeActiveTabColor);
-    if (UI::Button("Play", vec2(80.0f, barHeight))) {
+    if (UI::Button("Play", vec2(80.0f, barHeight)) && Permissions::PlayLocalMap()) {
         currentMenuTab = MenuTab::Play;
     }
     UI::PopStyleColor(3);
@@ -119,7 +119,7 @@ void RenderHomeTab() {
     UI::BeginGroup();
     UI::PushTextWrapPos(UI::GetCursorPos().x + rulesMaxWidth);
     UI::TextWrapped("This plugin has taken 200+ hours of programming, testing, and debugging so I appreciate any support given. To donate, use the KoFi link below, and to give suggestions or report bugs, create an issue on the github page.");
-    UI::TextWrapped("PSA: the server is $5 US per month, every donation after $5 will be put back in to plugin development");
+    UI::TextWrapped("PSA: the server is $5 US per month, every donation after the initial $5 for the server will be put back in to plugin development. Also, half will be given to Miss for all her work on Openplanet.");
     UI::NewLine();
     UI::PopTextWrapPos();
 
@@ -218,7 +218,7 @@ void RenderPlayTab() {
             if (portParsed > 0) serverPort = portParsed;
         }
 
-        trace("[Chess] Attempting to connect to server: " + serverHost + ":" + serverPort);
+        print("[Chess] Attempting to connect to server: " + serverHost + ":" + serverPort);
         if (Connect()) {
             print("[Chess] Successfully connected to server, waiting for handshake...");
         } else {
@@ -264,81 +264,13 @@ void RenderSettingsTab() {
 
     // Cache Management Section
     UI::NewLine();
-    UI::NewLine();
 
     UI::Text(themeSectionLabelColor + "Cache Management:");
-    UI::TextWrapped("Clears all cached chess piece images, map thumbnails, and logo.");
-    UI::NewLine();
+    UI::TextWrapped("Clears cached map thumbnails.");
 
-    if (StyledButton("Clear All Cache", vec2(200.0f, 30.0f))) {
-        // Clear piece textures
-        gPieces.ClearCache();
-
-        // Clear thumbnail cache
+    if (StyledButton("Clear Thumbnail Cache", vec2(200.0f, 30.0f))) {
         RaceMode::ThumbnailRendering::ClearThumbnailCache();
-
-        // Clear logo cache
-        ClearLogoCache();
-
-        print("[Settings] All caches cleared - piece textures, thumbnails, and logo");
-
-        // Show re-download prompt
-        showRedownloadPrompt = true;
+        print("[Settings] Thumbnail cache cleared");
+        UI::ShowNotification("Chess", "Thumbnail cache cleared.", vec4(0.2, 0.6, 0.9, 1), 3000);
     }
-}
-
-/**
- * Coroutine to re-download assets after cache is cleared
- */
-void RedownloadAssets() {
-    print("[Settings] Re-downloading cached files...");
-    UI::ShowNotification("Chess", "Re-downloading files...", vec4(0.2, 0.6, 0.9, 1), 3000);
-    LoadPieceAssets();
-    LoadLogo();
-    print("[Settings] Re-download complete");
-}
-
-/**
- * Renders the re-download prompt window after cache is cleared
- */
-void RenderRedownloadPrompt() {
-    if (!showRedownloadPrompt) return;
-
-    UI::SetNextWindowSize(350, 150, UI::Cond::FirstUseEver);
-    UI::SetNextWindowPos(
-        int(Display::GetWidth() / 2.0f - 175),
-        int(Display::GetHeight() / 2.0f - 75),
-        UI::Cond::FirstUseEver
-    );
-
-    int windowFlags = UI::WindowFlags::NoCollapse | UI::WindowFlags::NoResize;
-
-    if (UI::Begin("Cache Cleared", showRedownloadPrompt, windowFlags)) {
-        UI::TextWrapped("All cached files have been cleared.");
-        UI::NewLine();
-        UI::TextWrapped("Would you like to re-download the files now?");
-        UI::NewLine();
-        UI::NewLine();
-
-        // Center the buttons
-        float buttonWidth = 100.0f;
-        float spacing = 20.0f;
-        float totalWidth = buttonWidth * 2 + spacing;
-        float startX = (UI::GetContentRegionAvail().x - totalWidth) / 2.0f;
-        vec2 cursorPos = UI::GetCursorPos();
-        UI::SetCursorPos(vec2(cursorPos.x + startX, cursorPos.y));
-
-        if (StyledButton("Yes", vec2(buttonWidth, 30.0f))) {
-            // Re-download all assets in a separate coroutine (can't do async in render context)
-            startnew(RedownloadAssets);
-            showRedownloadPrompt = false;
-        }
-
-        UI::SameLine();
-
-        if (StyledButton("No", vec2(buttonWidth, 30.0f))) {
-            showRedownloadPrompt = false;
-        }
-    }
-    UI::End();
 }

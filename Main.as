@@ -1,3 +1,6 @@
+const string MainWindowName = Icons::PuzzlePiece + " \\$zChess";
+const string MainMenuItemName = "\\$862" + MainWindowName;
+
 void Main() {
     Init();
     InitializeGlobals();
@@ -14,7 +17,7 @@ void Update(float dt) {
 bool assetsStarted = false;
 
 void RenderMenu() {
-    if (UI::MenuItem("Chess Race")) {
+    if (UI::MenuItem(MainMenuItemName)) {
         showWindow = !showWindow;
     }
     if (showWindow && !assetsStarted) {

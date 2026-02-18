@@ -1,23 +1,20 @@
 // ============================================================================
 // LOGO ASSET LOADER
 // ============================================================================
-// Handles loading and caching the TMChess logo
+// Handles loading the TMChess logo from bundled assets
 
 // Logo texture
 UI::Texture@ logoTexture = null;
-
-// Base URL for asset downloads
-const string LOGO_BASE_URL = "https://tmchessassets-production.up.railway.app/assets/";
 
 // Loading tracking
 bool isLoadingLogo = false;
 
 /**
- * Loads the TMChess logo from cache or downloads it
+ * Loads the TMChess logo
  */
 void LoadLogo() {
     isLoadingLogo = true;
-    @logoTexture = LoadLogoTexture("TMChess.png");
+    @logoTexture = UI::LoadTexture("Images/TMChess.png");
     if (logoTexture !is null) {
         print("[Logo] TMChess logo loaded successfully");
     }
@@ -29,80 +26,6 @@ void LoadLogo() {
  */
 UI::Texture@ GetLogoTexture() {
     return logoTexture;
-}
-
-/**
- * Internal function to load texture from cache or download
- */
-UI::Texture@ LoadLogoTexture(const string &in filename) {
-    // Check if texture is already cached locally
-    string cachePath = IO::FromStorageFolder("textures/" + filename);
-
-    // Try to load from cache first
-    if (IO::FileExists(cachePath)) {
-        trace("[Logo] Loading from cache: " + filename);
-        try {
-            IO::File file(cachePath, IO::FileMode::Read);
-            if (file.Size() > 0) {
-                auto buf = file.Read(file.Size());
-                file.Close();
-                auto tex = UI::LoadTexture(buf);
-                if (tex !is null) return tex;
-            }
-            file.Close();
-        } catch {
-            warn("[Logo] Failed to load cached file, deleting: " + filename);
-            // Delete corrupted cache file
-            IO::Delete(cachePath);
-        }
-    }
-
-    // Download from server
-    trace("[Logo] Downloading: " + filename);
-    string url = LOGO_BASE_URL + filename;
-
-    Net::HttpRequest@ req = Net::HttpGet(url);
-    while (!req.Finished()) yield();
-
-    if (req.ResponseCode() != 200) {
-        warn("[Logo] Failed to download " + filename + " (HTTP " + req.ResponseCode() + ")");
-        return null;
-    }
-
-    auto buf = req.Buffer();
-    if (buf.GetSize() == 0) {
-        warn("[Logo] Empty response for: " + filename);
-        return null;
-    }
-
-    // Cache the downloaded file
-    IO::CreateFolder(IO::FromStorageFolder("textures"), true);
-    IO::File file(cachePath, IO::FileMode::Write);
-    file.Write(buf);
-    file.Close();
-    trace("[Logo] Cached: " + filename);
-
-    // Load texture from buffer
-    auto tex = UI::LoadTexture(buf);
-    if (tex is null) {
-        warn("[Logo] Failed to decode: " + filename);
-    }
-    return tex;
-}
-
-/**
- * Clears the logo from memory and cache
- */
-void ClearLogoCache() {
-    trace("[Logo] Clearing logo cache...");
-
-    @logoTexture = null;
-
-    string cachePath = IO::FromStorageFolder("textures/TMChess.png");
-    if (IO::FileExists(cachePath)) {
-        IO::Delete(cachePath);
-        trace("[Logo] Deleted cached logo");
-    }
 }
 
 /**

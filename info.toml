@@ -1,9 +1,8 @@
 [meta]
-name = "Chess Race"
+name = "Chess"
 author = "ItsGromit"
 category = "Game"
 version = "1.0"
-perms = "paid"
 siteid = 796
 
 [script]

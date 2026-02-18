@@ -4,16 +4,13 @@
 // Handles rendering of Playing and GameOver states
 // ============================================================================
 
-/**
- * Renders the Playing or GameOver state UI
- */
+
 void RenderPlayingState() {
     float lockButtonWidth = 30.0f;
     float barHeight = 30.0f;
     vec2 contentAvail = UI::GetContentRegionAvail();
     vec2 lockCursor = UI::GetCursorPos();
 
-    // Lock button at right
     RenderLockButton("playing", barHeight);
 
     // Reset cursor and add dummy invisible item to maintain bar height

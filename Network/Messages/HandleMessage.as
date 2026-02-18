@@ -171,11 +171,11 @@
 
                     if (boardMapsType == Json::Type::Array) {
                         uint mapCount = msg["boardMaps"].Length;
-                        print("[Chess] Receiving " + mapCount + " board map assignments from server...");
+                        trace("[Chess] Receiving " + mapCount + " board map assignments from server...");
 
                         // Log first few maps for debugging
                         if (mapCount > 0) {
-                            print("[Chess] Sample server maps - pos 0: " + string(msg["boardMaps"][0]["mapName"]) + ", pos 1: " + string(msg["boardMaps"][1]["mapName"]));
+                            trace("[Chess] Sample server maps - pos 0: " + string(msg["boardMaps"][0]["mapName"]) + ", pos 1: " + string(msg["boardMaps"][1]["mapName"]));
                         }
 
                         // Apply server maps directly (can't pass Json::Value to startnew)
@@ -190,7 +190,7 @@
                 }
             }
 
-            print("[Chess] Game state updated to Playing");
+            trace("[Chess] Game state updated to Playing");
         } else if (t == "moved") {
             string fen  = string(msg["fen"]);
             string turn = string(msg["turn"]);
@@ -315,13 +315,12 @@
             opponentIsRacing = false;
             opponentRaceStartedAt = 0;
             opponentFinalTime = -1;
-            print("[Chess] Opponent retired/respawned");
+            print("[Chess] Opponent DNF");
         } else if (t == "promotion_required") {
             // Attacker won race on a promotion capture - need to select promotion piece
             pendingPromotionFrom = string(msg["from"]);
             pendingPromotionTo = string(msg["to"]);
             isPendingPromotion = true;
-            print("[Chess] Promotion required - won race, select promotion piece");
 
             // Save race results to show in results window
             showRaceResults = true;
@@ -420,58 +419,6 @@
             UI::ShowNotification("Chess", "Loading new map: " + raceMapName, vec4(0.2,0.8,0.2,1), 5000);
 
             DownloadAndLoadMapFromTMX(raceMapTmxId, raceMapName);
-        } else if (t == "map_filters_updated") {
-            print("[Chess] Map filters updated for lobby");
-            // Update local filter values from server
-            if (msg.HasKey("filters")) {
-                auto filters = msg["filters"];
-                if (filters.HasKey("authortimemax")) {
-                    mapFilterAuthorTimeMax = int(filters["authortimemax"]);
-                }
-                if (filters.HasKey("authortimemin")) {
-                    mapFilterAuthorTimeMin = int(filters["authortimemin"]);
-                }
-                if (filters.HasKey("tags")) {
-                    mapFilterSelectedTags.Resize(0);
-                    auto tagsArray = filters["tags"];
-                    for (uint i = 0; i < tagsArray.Length; i++) {
-                        mapFilterSelectedTags.InsertLast(string(tagsArray[i]));
-                    }
-                }
-                if (filters.HasKey("excludeTags")) {
-                    mapFilterBlacklistedTags.Resize(0);
-                    auto excludeTagsArray = filters["excludeTags"];
-                    for (uint i = 0; i < excludeTagsArray.Length; i++) {
-                        mapFilterBlacklistedTags.InsertLast(string(excludeTagsArray[i]));
-                    }
-                }
-            }
-        } else if (t == "map_filters") {
-            print("[Chess] Received current map filters");
-            // Update local filter values from server
-            if (msg.HasKey("filters")) {
-                auto filters = msg["filters"];
-                if (filters.HasKey("authortimemax")) {
-                    mapFilterAuthorTimeMax = int(filters["authortimemax"]);
-                }
-                if (filters.HasKey("authortimemin")) {
-                    mapFilterAuthorTimeMin = int(filters["authortimemin"]);
-                }
-                if (filters.HasKey("tags")) {
-                    mapFilterSelectedTags.Resize(0);
-                    auto tagsArray = filters["tags"];
-                    for (uint i = 0; i < tagsArray.Length; i++) {
-                        mapFilterSelectedTags.InsertLast(string(tagsArray[i]));
-                    }
-                }
-                if (filters.HasKey("excludeTags")) {
-                    mapFilterBlacklistedTags.Resize(0);
-                    auto excludeTagsArray = filters["excludeTags"];
-                    for (uint i = 0; i < excludeTagsArray.Length; i++) {
-                        mapFilterBlacklistedTags.InsertLast(string(excludeTagsArray[i]));
-                    }
-                }
-            }
         } else if (t == "error") {
             string errorCode = string(msg["code"]);
             if (errorCode == "REMATCH_ALREADY_SENT") {
