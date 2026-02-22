@@ -22,7 +22,7 @@ void DownloadAndLoadMapFromTMX(int tmxId, const string &in mapName = "") {
         sleep(1000);
     }
     auto maniaTitleAPI = app.ManiaTitleControlScriptAPI;
-    if (maniaTitleAPI !is null) {
+    if (maniaTitleAPI !is null && Permissions::PlayLocalMap()) {
         // Load map directly from TMX URL
         string mapUrl = "https://trackmania.exchange/maps/download/" + tmxId;
         trace("[Chess] Loading map from URL: " + mapUrl);
