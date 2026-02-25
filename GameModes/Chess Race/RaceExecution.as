@@ -45,7 +45,9 @@ void FetchSquareRaceMap(int row, int col) {
     GameManager::currentState = GameState::RaceChallenge;
 
     // Download and load the map
-    DownloadAndLoadMapFromTMX(mapData.tmxId, mapData.mapName);
+    if (Permissions::PlayLocalMap()) {
+        DownloadAndLoadMapFromTMX(mapData.tmxId, mapData.mapName);
+    }
 }
 
 void UpdateRaceState() {
