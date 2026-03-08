@@ -109,7 +109,6 @@ void PropagateTextureToMatchingSquares(SquareMapData@ source) {
  * First tries to load from cache, then downloads if not cached
  */
 void DownloadSingleThumbnail(const string &in url, SquareMapData@ squareData) {
-    // First, check if thumbnail is already cached locally
     string filename = "thumb_" + squareData.tmxId + ".jpg";
     string cachePath = IO::FromStorageFolder("textures/thumbnails/" + filename);
 
@@ -145,15 +144,12 @@ void DownloadSingleThumbnail(const string &in url, SquareMapData@ squareData) {
     try {
         if (developerMode) print("[ThumbnailRendering] Downloading: " + squareData.mapName);
 
-        // Download the image
         auto req = Net::HttpGet(url);
 
-        // Wait for completion
         while (!req.Finished()) {
             yield();
         }
 
-        // Check for errors
         if (req.ResponseCode() != 200) {
             warn("[ThumbnailRendering] Failed to download thumbnail: HTTP " + req.ResponseCode());
             squareData.thumbnailLoading = false;
@@ -167,7 +163,6 @@ void DownloadSingleThumbnail(const string &in url, SquareMapData@ squareData) {
             return;
         }
 
-        // Get image data as buffer
         MemoryBuffer@ imageData = req.Buffer();
 
         if (imageData.GetSize() == 0) {
@@ -234,48 +229,38 @@ void DownloadSingleThumbnail(const string &in url, SquareMapData@ squareData) {
  * @param col The column index (0-7)
  */
 void RenderMapThumbnail(int row, int col) {
-    // Get the square's map data
     if (row < 0 || row >= 8 || col < 0 || col >= 8) return;
 
-    // Check if boardMaps is initialized
     if (MapAssignment::boardMaps.Length <= uint(row)) return;
     if (MapAssignment::boardMaps[row].Length <= uint(col)) return;
 
     SquareMapData@ squareData = MapAssignment::boardMaps[row][col];
     if (squareData is null) return;
 
-    // Only render thumbnail if this map was assigned by the server
-    // (tmxId > 0 means server sent map data, -1 means no map assigned)
     if (squareData.tmxId <= 0) return;
 
-    // If thumbnail not loaded, try to download it
     if (squareData.thumbnailTexture is null && !squareData.thumbnailLoading) {
-        // Check if this thumbnail has failed and should retry
         const int MAX_RETRY_COUNT = 3;
         if (squareData.thumbnailFailed && squareData.thumbnailRetryCount < MAX_RETRY_COUNT) {
             if (developerMode) print("[ThumbnailRendering] Retrying failed thumbnail for " + squareData.mapName + " (attempt " + (squareData.thumbnailRetryCount + 1) + "/" + MAX_RETRY_COUNT + ")");
-            squareData.thumbnailFailed = false; // Reset flag for retry
+            squareData.thumbnailFailed = false;
             DownloadThumbnail(squareData);
         } else if (!squareData.thumbnailFailed) {
-            // First download attempt
             DownloadThumbnail(squareData);
         } else {
             // Exceeded max retries, log and skip
             if (squareData.thumbnailRetryCount >= MAX_RETRY_COUNT) {
-                // Only log once when we first hit the limit
                 if (squareData.thumbnailRetryCount == MAX_RETRY_COUNT) {
                     warn("[ThumbnailRendering] Max retries reached for " + squareData.mapName + ", giving up");
-                    squareData.thumbnailRetryCount++; // Increment to prevent repeated logging
+                    squareData.thumbnailRetryCount++;
                 }
             }
         }
-        return; // Don't render until loaded
+        return;
     }
 
-    // If still loading or no texture, don't render
     if (squareData.thumbnailTexture is null) return;
 
-    // Get the screen position and size of the last drawn item (the button)
     vec4 rect = UI::GetItemRect();
     vec2 pos = vec2(rect.x, rect.y);
     vec2 size = vec2(rect.z, rect.w);

@@ -18,7 +18,7 @@ const TCP_PORT = Number(process.env.PORT || 29802);
 const STATS_INTERVAL = 50000;
 
 // Required client version
-const REQUIRED_CLIENT_VERSION = '1.0';
+const REQUIRED_CLIENT_VERSION = '1.1';
 
 module.exports = {
   BLACKLISTED_AUTHORS,

@@ -130,9 +130,8 @@
             gameId  = string(msg["gameId"]);
             isWhite = bool(msg["isWhite"]);
             string fen  = string(msg["fen"]);
-            string turn = string(msg["turn"]); // "w"/"b"
+            string turn = string(msg["turn"]);
 
-            // Receive race mode from server
             if (msg.HasKey("raceMode")) {
                 string raceModeStr = string(msg["raceMode"]);
                 currentRaceMode = RaceMode::SquareRace;
@@ -148,13 +147,12 @@
                 print("[Chess] Game starting - gameId: " + gameId + ", isWhite: " + isWhite + ", turn: " + turn);
             }
 
-            // Reset game state variables
             gameOver = false;
             gameResult = "";
-            moveHistory.Resize(0); // Clear move history for new game
+            moveHistory.Resize(0);
             rematchRequestReceived = false;
             rematchRequestSent = false;
-            showRaceResults = false; // Hide race results from previous game
+            showRaceResults = false;
 
             ApplyFEN(fen, turn);
             GameManager::currentState = GameState::Playing;
@@ -164,7 +162,6 @@
 
             // Initialize Chess Race mode
             if (currentRaceMode == RaceMode::SquareRace) {
-                // Check if server sent board map assignments
                 if (msg.HasKey("boardMaps")) {
                     Json::Type boardMapsType = msg["boardMaps"].GetType();
                     print("[Chess] boardMaps field present - type: " + tostring(boardMapsType));
@@ -173,7 +170,6 @@
                         uint mapCount = msg["boardMaps"].Length;
                         trace("[Chess] Receiving " + mapCount + " board map assignments from server...");
 
-                        // Log first few maps for debugging
                         if (mapCount > 0) {
                             trace("[Chess] Sample server maps - pos 0: " + string(msg["boardMaps"][0]["mapName"]) + ", pos 1: " + string(msg["boardMaps"][1]["mapName"]));
                         }

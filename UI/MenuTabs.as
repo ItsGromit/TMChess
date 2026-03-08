@@ -104,7 +104,7 @@ void RenderHomeTab() {
     UI::TextWrapped("- Special moves like castling, en passant, and pawn promotion are supported");
     UI::Dummy(vec2(0, 5));
     UI::TextWrapped("Chess Race Mode:");
-    UI::TextWrapped("- Each square on the board has a Trackmania map assigned to it");
+    UI::TextWrapped("- Each square on the board has a Trackmania map assigned to it from a TMX mappack (default map back is one I made with 64 of the most recent campaign maps)");
     UI::TextWrapped("- When attempting a capture, both players race on the destination square's map");
     UI::TextWrapped("- The winner of the race gets the piece, even if defending");
     UI::TextWrapped("- Right-click any square to see its map name and tags");
@@ -273,4 +273,15 @@ void RenderSettingsTab() {
         print("[Settings] Thumbnail cache cleared");
         UI::ShowNotification("Chess", "Thumbnail cache cleared.", vec4(0.2, 0.6, 0.9, 1), 3000);
     }
+
+    UI::NewLine();
+    UI::Text(themeSectionLabelColor + "Sound settings: ");
+    UI::TextWrapped("Test plugin audio here");
+
+    if (StyledButton("Test audio", vec2(200.0f, 30.0f))) {
+        ChessAudio::PlayGameStartSound();
+        UI::ShowNotification("Chess", "Played game start sound", vec4(0.2, 0.6, 0.9, 1), 3000);
+    }
+
+    ChessAudio::soundVolume = UI::SliderFloat("Audio Volume", ChessAudio::soundVolume, 0.0f, 1.0f);
 }

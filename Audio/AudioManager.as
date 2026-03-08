@@ -24,7 +24,7 @@ Audio::Sample@ gameRematchSound;
 bool enableSounds = true;
 
 [Setting category="Audio" name="Sound Volume" min=0.0 max=1.0]
-float soundVolume = 0.5f;
+float soundVolume;
 
 // Loads a sound sample, returns null if file not found
 Audio::Sample@ TryLoadSample(const string &in path) {
@@ -36,17 +36,17 @@ Audio::Sample@ TryLoadSample(const string &in path) {
 }
 
 void LoadSounds() {
-    @moveSound = TryLoadSample("Sounds/move.mp3");
-    @moveOpponentSound = TryLoadSample("Sounds/move.mp3");
-    @captureSound = TryLoadSample("Sounds/capture.mp3");
-    @checkSound = TryLoadSample("Sounds/check.mp3");
-    @checkmateSound = TryLoadSample("Sounds/checkmate.mp3");
-    @castleSound = TryLoadSample("Sounds/castle.mp3");
-    @gameStartSound = TryLoadSample("Sounds/notification.mp3");
-    @gameLossSound = TryLoadSample("Sounds/defeat.mp3");
-    @gameWinSound = TryLoadSample("Sounds/victory.mp3");
-    @gameDrawSound = TryLoadSample("Sounds/draw.mp3");
-    @gameRematchSound = TryLoadSample("Sounds/rematch.mp3");
+    @moveSound = TryLoadSample("Sounds/move.wav");
+    @moveOpponentSound = TryLoadSample("Sounds/move.wav");
+    @captureSound = TryLoadSample("Sounds/capture.wav");
+    @checkSound = TryLoadSample("Sounds/check.wav");
+    @checkmateSound = TryLoadSample("Sounds/notification.wav");
+    @castleSound = TryLoadSample("Sounds/castle.wav");
+    @gameStartSound = TryLoadSample("Sounds/notification.wav");
+    @gameLossSound = TryLoadSample("Sounds/defeat.wav");
+    @gameWinSound = TryLoadSample("Sounds/victory.wav");
+    @gameDrawSound = TryLoadSample("Sounds/draw.wav");
+    @gameRematchSound = TryLoadSample("Sounds/rematch.wav");
 
     if (developerMode) {
         trace("[Audio] Loaded chess sounds");

@@ -17,6 +17,7 @@ void Update(float dt) {
 bool assetsStarted = false;
 
 void RenderMenu() {
+    UI::SetNextWindowSize(int(defaultWidth), int(defaultHeight), UI::Cond::FirstUseEver);
     if (UI::MenuItem(MainMenuItemName)) {
         showWindow = !showWindow;
     }
@@ -24,7 +25,7 @@ void RenderMenu() {
         assetsStarted = true;
         startnew(LoadPieceAssets);
         startnew(LoadLogo);
-        ChessAudio::LoadSounds();
+        startnew(ChessAudio::LoadSounds);
     }
 }
 
