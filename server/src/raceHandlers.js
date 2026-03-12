@@ -114,7 +114,7 @@ function handleRaceResult(socket, msg) {
         type: 'race_result',
         captureSucceeded: false,
         fen,
-        turn
+        turn: turn
       });
     }
 
