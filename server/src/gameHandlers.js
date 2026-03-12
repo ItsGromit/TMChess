@@ -21,7 +21,6 @@ async function handleMove(socket, msg) {
   const turnColor = game.chess.turn(); // 'w' | 'b'
   const seat = (socket === game.white) ? 'w' : (socket === game.black ? 'b' : null);
   if (seat == null) return send(socket, { type: 'error', code: 'NOT_IN_GAME' });
-  if (seat !== turnColor) return send(socket, { type: 'error', code: 'NOT_YOUR_TURN' });
 
   // Accept algebraic squares (recommended). Example: from:'e2', to:'e4'
   const from = toAlgebra(msg.from);

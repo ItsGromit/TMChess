@@ -109,12 +109,12 @@ function handleRaceResult(socket, msg) {
     } else {
       // Defender won, capture fails - board stays the same
       const fen = game.chess.fen();
-      const turn = game.chess.turn() === 'w' ? 'b' : 'w';
+      const nextTurn = game.chess.turn() === 'w' ? 'b' : 'w';
       broadcastPlayers(game, {
         type: 'race_result',
         captureSucceeded: false,
         fen,
-        turn: turn
+        turn: nextTurn
       });
     }
 
@@ -229,12 +229,12 @@ function handleRaceRetire(socket, msg) {
     } else {
       // Capture fails
       const fen = game.chess.fen();
-      const turn = game.chess.turn() === 'w' ? 'b' : 'w';
+      const nextTurn = game.chess.turn() === 'w' ? 'b' : 'w';
       broadcastPlayers(game, {
         type: 'race_result',
         captureSucceeded: false,
         fen,
-        turn
+        turn: nextTurn
       });
     }
 
